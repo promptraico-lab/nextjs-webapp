@@ -9,10 +9,11 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import apiClient from "@/lib/apiClient";
 import { toast } from "react-hot-toast";
-import authStorage from "@/lib/storage";
+import useAuth from "@/hooks/useAuth";
 
 export function LoginForm({ className, ...props }) {
   const { register, handleSubmit } = useForm();
+  const { logIn } = useAuth();
 
   const onSubmit = async (data) => {
     try {
@@ -21,8 +22,7 @@ export function LoginForm({ className, ...props }) {
 
       if (response.ok && token) {
         const { user } = response.data;
-        authStorage.storeToken(token);
-        localStorage.setItem("promptr-user", JSON.stringify(user));
+        logIn({ token, user });
 
         return response.data;
       } else if (response.status === 401) {
