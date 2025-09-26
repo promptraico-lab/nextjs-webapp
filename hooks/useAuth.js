@@ -5,13 +5,16 @@ import { currentUserAtom } from "@/config/state";
 
 export default function useAuth() {
   const [currentUser, setCurrentUser] = useAtom(currentUserAtom);
-  const key = "promptr-auth-token";
+  const key = "promptr-auth-user";
+  const tokenKey = "promptr-auth-token";
 
   const logIn = (data) => {
-    authStorage.storeToken(data.token);
-    localStorage.setItem(key, JSON.stringify(data.user));
+    const { token, user } = data;
 
-    setCurrentUser(data.user);
+    localStorage.setItem(tokenKey, token);
+    localStorage.setItem(key, JSON.stringify(user));
+
+    setCurrentUser(user);
   };
 
   const logOut = async () => {
