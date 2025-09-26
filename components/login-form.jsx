@@ -1,16 +1,47 @@
+"use client";
+
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
+import { useForm } from "react-hook-form";
+import apiClient from "@/lib/apiClient";
+import { toast } from "react-hot-toast";
+import authStorage from "@/lib/storage";
 
 export function LoginForm({ className, ...props }) {
+  const { register, handleSubmit } = useForm();
+
+  const onSubmit = async (data) => {
+    try {
+      const response = await apiClient.post("/authnon/login", data);
+      const token = response.headers && response.headers["x-auth-token"];
+
+      if (response.ok && token) {
+        const { user } = response.data;
+        authStorage.storeToken(token);
+        localStorage.setItem("promptr-user", JSON.stringify(user));
+
+        return response.data;
+      } else if (response.status === 401) {
+        throw new Error("ایمیل یا رمز عبور اشتباه است");
+      } else {
+        throw new Error(
+          response.data?.message || response.problem || "ورود ناموفق بود"
+        );
+      }
+    } catch (error) {
+      toast.error("An error occurred during login. Please try again.");
+    }
+  };
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="overflow-hidden p-0">
         <CardContent className="grid p-0 md:grid-cols-2">
-          <form className="p-6 md:p-8">
+          <form className="p-6 md:p-8" onSubmit={handleSubmit(onSubmit)}>
             <div className="flex flex-col gap-6">
               <div className="flex flex-col items-center text-center">
                 <h1 className="text-2xl font-bold">Welcome back</h1>
@@ -25,6 +56,7 @@ export function LoginForm({ className, ...props }) {
                   type="email"
                   placeholder="m@example.com"
                   required
+                  {...register("email", { required: true })}
                 />
               </div>
               <div className="grid gap-3">
@@ -37,7 +69,12 @@ export function LoginForm({ className, ...props }) {
                     Forgot your password?
                   </a>
                 </div>
-                <Input id="password" type="password" required />
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  {...register("password", { required: true })}
+                />
               </div>
               <Button type="submit" className="w-full">
                 Login
