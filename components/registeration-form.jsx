@@ -7,12 +7,27 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
+import apiClient from "@/lib/apiClient";
+import { toast } from "react-hot-toast";
 
 export function RegisterForm({ className, ...props }) {
-  const { register, handleSubmit } = useForm();
+  const { register, handleSubmit, reset } = useForm();
+  const onSubmit = async (data) => {
+    try {
+      const response = await apiClient.post("/register", data);
 
-  const onSubmit = (data) => {
-    console.log("Register form data:", data);
+      if (response.ok) {
+        toast.success("User registered successfully!");
+        reset();
+      } else {
+        toast.error(
+          response.data?.message ||
+            "Registration failed. Please check your input and try again."
+        );
+      }
+    } catch (error) {
+      toast.error("An error occurred during registration. Please try again.");
+    }
   };
 
   return (
