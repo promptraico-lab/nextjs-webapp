@@ -24,7 +24,6 @@ Again: Output ONLY the improved prompt, with no additional commentary, formattin
 
 export async function POST(req) {
   const { prompt } = await req.json();
-  console.log(prompt);
 
   const streamRes = await groq.chat.completions.create({
     model: "openai/gpt-oss-120b",
