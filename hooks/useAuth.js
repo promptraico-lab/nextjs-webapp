@@ -8,12 +8,12 @@ export default function useAuth() {
   const key = "promptr-auth-user";
   const tokenKey = "promptr-auth-token";
 
-  const logIn = (data) => {
-    const { token, user } = data;
+  const logIn = (data, token) => {
+    const { user } = data;
 
-    localStorage.setItem(tokenKey, token);
-    localStorage.setItem(key, JSON.stringify(user));
-
+    if (token) {
+      document.cookie = `${tokenKey}=${token}; path=/;`;
+    }
     setCurrentUser(user);
   };
 
