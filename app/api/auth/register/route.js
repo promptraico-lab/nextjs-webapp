@@ -6,6 +6,8 @@ const registerSchema = joi.object({
   password: joi.string().min(6).required(),
 });
 
+const jsonHeader = { "Content-Type": "application/json" };
+
 export async function POST(req) {
   const body = await req.json();
 
@@ -14,7 +16,7 @@ export async function POST(req) {
   if (error) {
     return new Response(JSON.stringify({ error: error.details[0].message }), {
       status: 400,
-      headers: { "Content-Type": "application/json" },
+      headers: jsonHeader,
     });
   }
 
@@ -27,7 +29,7 @@ export async function POST(req) {
   if (user)
     return new Response(JSON.stringify({ error: "User already exists" }), {
       status: 400,
-      headers: { "Content-Type": "application/json" },
+      headers: jsonHeader,
     });
 
   // Hash the password
@@ -48,7 +50,7 @@ export async function POST(req) {
     }),
     {
       status: 201,
-      headers: { "Content-Type": "application/json" },
+      headers: jsonHeader,
     }
   );
 }
