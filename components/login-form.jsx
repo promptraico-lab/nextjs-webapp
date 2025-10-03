@@ -10,10 +10,12 @@ import { useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
 import useAuth from "@/hooks/useAuth";
 import apiClient from "@/lib/apiClient";
+import { useRouter } from "next/navigation";
 
 export function LoginForm({ className, ...props }) {
   const { register, handleSubmit } = useForm();
   const { logIn } = useAuth();
+  const router = useRouter();
 
   const onSubmit = async (data) => {
     try {
@@ -24,6 +26,11 @@ export function LoginForm({ className, ...props }) {
       if (response.ok && token) {
         logIn(response.data, token);
         toast.success("Login successful");
+        if (typeof window !== "undefined") {
+          setTimeout(() => {
+            router.push("/admin/dashboard");
+          }, 100);
+        }
         return response.data;
       }
 
