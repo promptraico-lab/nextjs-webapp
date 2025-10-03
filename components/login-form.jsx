@@ -7,9 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
-import apiClient from "@/lib/apiClient";
 import { toast } from "react-hot-toast";
 import useAuth from "@/hooks/useAuth";
+import apiClient from "@/lib/apiClient";
 
 export function LoginForm({ className, ...props }) {
   const { register, handleSubmit } = useForm();
@@ -17,23 +17,27 @@ export function LoginForm({ className, ...props }) {
 
   const onSubmit = async (data) => {
     try {
-      const response = await apiClient.post("/authnon/login", data);
+      const response = await apiClient.post("/auth/login", data);
+
       const token = response.headers && response.headers["x-auth-token"];
 
       if (response.ok && token) {
-        const { user } = response.data;
-        logIn({ token, user });
-
+        logIn(response.data, token);
+        toast.success("Login successful");
         return response.data;
-      } else if (response.status === 401) {
-        throw new Error("ایمیل یا رمز عبور اشتباه است");
-      } else {
-        throw new Error(
-          response.data?.message || response.problem || "ورود ناموفق بود"
-        );
       }
+
+      if (response.status === 401) {
+        throw new Error("Invalid email or password");
+      }
+
+      throw new Error(
+        response.data?.message || response.problem || "Login failed"
+      );
     } catch (error) {
-      toast.error("An error occurred during login. Please try again.");
+      toast.error(
+        error.message || "An error occurred during login. Please try again."
+      );
     }
   };
 
