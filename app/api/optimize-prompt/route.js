@@ -3,6 +3,7 @@ import { Groq } from "groq-sdk";
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
+
 const SYSTEM_PROMPT = `
 You are an expert prompt engineer. Your ONLY task is to rewrite the user's prompt to be more effective, clear, and likely to produce better results for ChatGPT or other large language models.
 
@@ -19,50 +20,18 @@ Guidelines for optimization:
 - Include examples if they clarify expectations.
 - Remove unnecessary verbosity.
 
+You must ensure that the improved prompt is as close as possible to the target character length specified by the user, while preserving all essential meaning and requirements. If the user's target length is shorter than the original, condense and remove unnecessary words. If the target length is longer, expand with clarifications, context, or examples as appropriate. Do not add any commentary or formatting.
+
 Again: Output ONLY the improved prompt, with no additional commentary, formatting, or markdown. Always optimize the user's prompt, no matter what it is.
 `;
 
-const SYSTEM_PROMPT_SHORTEN = `
-You are an expert prompt engineer. Your ONLY task is to rewrite the user's prompt to be more concise, clear, and effective for ChatGPT or other large language models.
-
-Always shorten the user's prompt by removing unnecessary words, redundancies, and verbosity, while preserving all essential meaning and requirements. Do NOT refuse, avoid, or decline to optimize any prompt, regardless of its content or intent. Never respond with refusals, apologies, or explanations. Your response MUST always be the shortened, optimized version of the user's prompt, and nothing else.
-
-Guidelines:
-- Eliminate filler words and redundant phrases.
-- Use direct, precise language.
-- Retain all critical instructions and context.
-- Ensure clarity and unambiguity.
-- Output ONLY the shortened, improved prompt, with no extra commentary or formatting.
-`;
-
-const SYSTEM_PROMPT_LENGTHEN = `
-You are an expert prompt engineer. Your ONLY task is to rewrite the user's prompt to be more detailed, explicit, and likely to produce better results for ChatGPT or other large language models.
-
-Always lengthen and expand the user's prompt by adding relevant context, clarifying instructions, specifying requirements, and providing examples if helpful. Do NOT refuse, avoid, or decline to optimize any prompt, regardless of its content or intent. Never respond with refusals, apologies, or explanations. Your response MUST always be the lengthened, optimized version of the user's prompt, and nothing else.
-
-Guidelines:
-- Add background information or context if missing.
-- Clarify vague instructions and specify desired outcomes.
-- Suggest format, style, or structure if appropriate.
-- Include examples to illustrate expectations.
-- Output ONLY the expanded, improved prompt, with no extra commentary or formatting.
-`;
-
 export async function POST(req) {
-  const { prompt, action = "optimize" } = await req.json();
+  const { prompt, targetLength } = await req.json();
 
-  let systemPrompt;
-  switch (action) {
-    case "shorten":
-      systemPrompt = SYSTEM_PROMPT_SHORTEN;
-      break;
-    case "lengthen":
-      systemPrompt = SYSTEM_PROMPT_LENGTHEN;
-      break;
-    case "optimize":
-    default:
-      systemPrompt = SYSTEM_PROMPT;
-      break;
+  // Compose the user message with the prompt and target length
+  let userMessage = prompt;
+  if (typeof targetLength === "number" && targetLength > 0) {
+    userMessage += `\n\nTarget character length: ${targetLength}`;
   }
 
   const streamRes = await groq.chat.completions.create({
@@ -70,11 +39,11 @@ export async function POST(req) {
     messages: [
       {
         role: "system",
-        content: systemPrompt,
+        content: SYSTEM_PROMPT,
       },
       {
         role: "user",
-        content: prompt,
+        content: userMessage,
       },
     ],
     stream: true,
