@@ -21,7 +21,7 @@ export function RegisterForm({ className, ...props }) {
         reset();
       } else {
         toast.error(
-          response.data?.message ||
+          response.data?.error ||
             "Registration failed. Please check your input and try again."
         );
       }
