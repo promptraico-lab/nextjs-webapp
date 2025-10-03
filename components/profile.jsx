@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import useAuth from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
-
 import { useForm } from "react-hook-form";
 
 export default function ProfilePage() {
@@ -17,6 +16,7 @@ export default function ProfilePage() {
     register,
     handleSubmit,
     reset,
+    errors,
     formState: { isSubmitting },
   } = useForm({
     defaultValues: {
@@ -105,8 +105,11 @@ export default function ProfilePage() {
               <Label htmlFor="name">Name</Label>
               <Input
                 id="name"
-                {...register("name")}
+                {...register("name", { required: "Name is required" })}
               />
+              {errors?.name && (
+                <p className="text-sm text-red-500">{errors.name.message}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -114,16 +117,19 @@ export default function ProfilePage() {
               <Input
                 id="email"
                 type="email"
-                {...register("email")}
+                {...register("email", { required: "Email is required" })}
               />
+              {errors?.email && (
+                <p className="text-sm text-red-500">{errors.email.message}</p>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="bio">Bio</Label>
-              <Input
-                id="bio"
-                {...register("bio")}
-              />
+              <Input id="bio" {...register("bio")} />
+              {errors?.bio && (
+                <p className="text-sm text-red-500">{errors.bio.message}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -134,6 +140,9 @@ export default function ProfilePage() {
                 placeholder="e.g. +1 555 123 4567"
                 {...register("phone")}
               />
+              {errors?.phone && (
+                <p className="text-sm text-red-500">{errors.phone.message}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -143,6 +152,11 @@ export default function ProfilePage() {
                 placeholder="City, Country"
                 {...register("location")}
               />
+              {errors?.location && (
+                <p className="text-sm text-red-500">
+                  {errors.location.message}
+                </p>
+              )}
             </div>
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>
