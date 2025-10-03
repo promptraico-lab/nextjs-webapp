@@ -33,10 +33,15 @@ export default function useAuth() {
     window.open("/auth/login", "_self");
   };
 
-  const updateUser = async () => {
+  const updateUser = async (newUser) => {
+    if (newUser) {
+      setCurrentUser(newUser);
+      return;
+    }
+
     if (!currentUser) return;
 
-    const { data, ok } = await apiClient.get("/users/me");
+    const { data, ok } = await apiClient.get("/users/profile");
     if (data?.state < 0 || !ok) {
       console.log("Err in updateUser in useAuth:", data);
       throw new Error("An error occured. Please try again later.");
