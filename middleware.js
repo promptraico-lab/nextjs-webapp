@@ -6,6 +6,11 @@ export function middleware(request) {
   const token = request.cookies.get("promptr-auth-token")?.value;
   const pathname = request.nextUrl.pathname;
 
+  // Ignore all /api routes
+  if (pathname.startsWith("/api")) {
+    return NextResponse.next();
+  }
+
   // If user is on /login and already authenticated, redirect to /admin/dashboard
   if (pathname === "/login" && token) {
     try {
