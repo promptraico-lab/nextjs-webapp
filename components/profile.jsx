@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import useAuth from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
+import apiClient from "@/lib/apiClient";
 
 export default function ProfilePage() {
   const { currentUser, updateUser } = useAuth();
@@ -83,14 +85,25 @@ export default function ProfilePage() {
   }
 
   const onSubmit = async (data) => {
-    // You can implement the update logic here, e.g. call an API to update the user profile
-    // For now, just log the data
-    // Optionally, you can call updateUser() after successful update
-    // Example: await apiClient.put("/users/me", data);
-    // await updateUser();
-    // toast.success("Profile updated!");
-    // For now:
-    console.log("Profile form submitted:", data);
+    try {
+      const response = await apiClient.put("/users/profile", data);
+
+      if (response.ok) {
+        await updateUser(response.data.user);
+        toast.success("Profile updated!");
+      } else {
+        const errorMsg = response.data?.error || "Failed to update profile";
+        toast.error(errorMsg);
+        console.error(
+          "Failed to update profile:",
+          response.problem,
+          response.data
+        );
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error("An error occurred while updating profile.");
+    }
   };
 
   return (
