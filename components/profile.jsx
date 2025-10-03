@@ -89,7 +89,7 @@ export default function ProfilePage() {
       const response = await apiClient.put("/users/profile", data);
 
       if (response.ok) {
-        await updateUser(response.data.user);
+        await updateUser(data);
         toast.success("Profile updated!");
       } else {
         const errorMsg = response.data?.error || "Failed to update profile";
