@@ -3,46 +3,35 @@ import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken"; // You'll need to install it: npm i jsonwebtoken
 
 export function middleware(request) {
-  const token = request.cookies.get("promptr-auth-token")?.value;
-  const pathname = request.nextUrl.pathname;
+  const { pathname } = request.nextUrl;
 
-  // Ignore all /api routes
+  // Get JWT token from cookie
+  const token = request.cookies.get("promptr-auth-token")?.value;
+  const isAuthenticated = !!token;
+
+  // Always allow /api routes through
   if (pathname.startsWith("/api")) {
     return NextResponse.next();
   }
 
-  // If user is on /login and already authenticated, redirect to /admin/dashboard
-  if (pathname === "/login" && token) {
-    try {
-      jwt.verify(token, process.env.JWT_SECRET);
-      return NextResponse.redirect(new URL("/admin/dashboard", request.url));
-    } catch (err) {
-      // Invalid/expired token, let them see login
-      return NextResponse.next();
-    }
-  }
+  // Pages that unauthenticated users can access
+  const publicPages = ["/login", "/register", "/404"];
 
-  // If not authenticated and not on /login, redirect to /login
-  if (!token && pathname !== "/login") {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-
-  // If authenticated and path does NOT start with /admin or /login, redirect to /admin/dashboard
-  if (token && pathname !== "/login") {
-    try {
-      jwt.verify(token, process.env.JWT_SECRET);
-
-      if (!pathname.startsWith("/admin")) {
-        return NextResponse.redirect(new URL("/admin/dashboard", request.url));
-      }
-      return NextResponse.next();
-    } catch (err) {
-      // Invalid/expired token, redirect to login
+  if (!isAuthenticated) {
+    // If not authenticated and not accessing a public page, redirect to /login
+    if (!publicPages.includes(pathname)) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
+    // Allow access to /login, /register, /404
+    return NextResponse.next();
   }
 
-  // Otherwise, allow request (e.g., /login for unauthenticated users)
+  // If authenticated and accessing /login, /register, or /404, redirect to dashboard
+  if (pathname !== "/404" && !pathname.startsWith("/admin")) {
+    return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+  }
+
+  // Otherwise, allow
   return NextResponse.next();
 }
 
