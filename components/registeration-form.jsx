@@ -14,7 +14,7 @@ export function RegisterForm({ className, ...props }) {
   const { register, handleSubmit, reset } = useForm();
   const onSubmit = async (data) => {
     try {
-      const response = await apiClient.post("/register", data);
+      const response = await apiClient.post("/auth/register", data);
 
       if (response.ok) {
         toast.success("User registered successfully!");
