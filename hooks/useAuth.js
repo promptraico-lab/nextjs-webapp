@@ -1,26 +1,35 @@
 import { useAtom } from "jotai";
-import authStorage from "@/lib/storage";
 import apiClient from "@/lib/apiClient";
 import { currentUserAtom } from "@/config/state";
 
+function setCookie(name, value, days = 7) {
+  let expires = "";
+  if (days) {
+    const date = new Date();
+    date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+    expires = "; expires=" + date.toUTCString();
+  }
+  document.cookie =
+    name + "=" + encodeURIComponent(value) + expires + "; path=/;";
+}
+
+function deleteCookie(name) {
+  document.cookie = name + "=; Max-Age=0; path=/;";
+}
+
 export default function useAuth() {
   const [currentUser, setCurrentUser] = useAtom(currentUserAtom);
-  const key = "promptr-auth-user";
   const tokenKey = "promptr-auth-token";
 
   const logIn = (data, token) => {
-    const { user } = data;
-
     if (token) {
-      document.cookie = `${tokenKey}=${token}; path=/;`;
+      setCookie(tokenKey, token);
     }
-    setCurrentUser(user);
+    setCurrentUser(data.user);
   };
 
   const logOut = async () => {
-    authStorage.removeToken();
-    localStorage.removeItem(key);
-
+    deleteCookie(tokenKey);
     window.open("/auth/login", "_self");
   };
 
@@ -32,8 +41,6 @@ export default function useAuth() {
       console.log("Err in updateUser in useAuth:", data);
       throw new Error("An error occured. Please try again later.");
     }
-
-    localStorage.setItem(key, JSON.stringify(data.user));
 
     setCurrentUser(data.user);
   };
