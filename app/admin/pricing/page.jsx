@@ -14,99 +14,45 @@ import { cn } from "@/lib/utils";
 import { ArrowRight, BadgeCheck } from "lucide-react";
 import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 const plans = [
   {
-    id: "hobby",
-    name: "Hobby",
+    id: "monthly",
+    name: "Monthly",
     price: {
-      monthly: "Free forever",
-      yearly: "Free forever",
+      monthly: 10,
+      yearly: 10, // fallback, not used
     },
     description:
-      "The perfect starting place for your web app or personal project.",
+      "Perfect for trying out promptR and optimizing your prompts directly from the ChatGPT interface. Cancel anytime.",
     features: [
-      "50 API calls / month",
-      "60 second checks",
-      "Single-user account",
-      "5 monitors",
-      "Basic email support",
-    ],
-    cta: "Get started for free",
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    price: {
-      monthly: 90,
-      yearly: 75,
-    },
-    description: "Everything you need to build and scale your business.",
-    features: [
-      "Unlimited API calls",
-      "30 second checks",
-      "Multi-user account",
-      "10 monitors",
+      "Unlimited prompt optimizations",
+      "Works directly in ChatGPT",
       "Priority email support",
     ],
-    cta: "Subscribe to Pro",
-    popular: true,
+    cta: "Subscribe Monthly",
+    popular: false,
   },
   {
-    id: "enterprise",
-    name: "Enterprise",
+    id: "yearly",
+    name: "Yearly",
     price: {
-      monthly: "Get in touch for pricing",
-      yearly: "Get in touch for pricing",
+      monthly: 8, // for display as "$8/month, billed yearly"
+      yearly: 8,
     },
-    description: "Critical security, performance, observability and support.",
+    description:
+      "Unlock all promptR features and save 20% with annual billing. Optimize your prompts seamlessly in ChatGPT all year long.",
     features: [
-      "You can DDOS our API.",
-      "Nano-second checks.",
-      "Invite your extended family.",
-      "Unlimited monitors.",
-      "We'll sit on your desk.",
+      "Unlimited prompt optimizations",
+      "Works directly in ChatGPT",
+      "Priority email support",
     ],
-    cta: "Contact us",
+    cta: "Subscribe Yearly",
+    popular: true,
   },
 ];
+
 export default function Pricing() {
-  const [frequency, setFrequency] = useState("monthly");
-
-  const plans = [
-    {
-      id: "monthly",
-      name: "Monthly",
-      price: {
-        monthly: 10,
-        yearly: 10, // fallback, not used
-      },
-      description: "Perfect for trying out promptR and optimizing your prompts directly from the ChatGPT interface. Cancel anytime.",
-      features: [
-        "Unlimited prompt optimizations",
-        "Works directly in ChatGPT",
-        "Priority email support",
-      ],
-      cta: "Subscribe Monthly",
-      popular: false,
-    },
-    {
-      id: "yearly",
-      name: "Yearly",
-      price: {
-        monthly: 8, // for display as "$8/month, billed yearly"
-        yearly: 8,
-      },
-      description: "Unlock all promptR features and save 20% with annual billing. Optimize your prompts seamlessly in ChatGPT all year long.",
-      features: [
-        "Unlimited prompt optimizations",
-        "Works directly in ChatGPT",
-        "Priority email support",
-      ],
-      cta: "Subscribe Yearly",
-      popular: true,
-    },
-  ];
-
   return (
     <div className="not-prose flex flex-col gap-16 px-8 py-24 text-center">
       <div className="flex flex-col items-center justify-center gap-8">
@@ -114,75 +60,89 @@ export default function Pricing() {
           promptR: Optimize your ChatGPT prompts instantly
         </h1>
         <p className="mx-auto mt-0 mb-0 max-w-2xl text-balance text-lg text-muted-foreground">
-          Get <span className="font-semibold text-primary">10 free prompt optimizations</span> when you install promptR Chrome Extension!
+          Get{" "}
+          <span className="font-semibold text-primary">
+            10 free prompt optimizations
+          </span>{" "}
+          when you install promptR Chrome Extension!
         </p>
-        <Tabs defaultValue={frequency} onValueChange={setFrequency}>
-          <TabsList>
-            <TabsTrigger value="monthly">Monthly</TabsTrigger>
-            <TabsTrigger value="yearly">
-              Yearly
-              <Badge variant="secondary">20% off</Badge>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-        <div className="mt-8 grid w-full max-w-2xl gap-4 lg:grid-cols-2 mx-auto">
-          {plans.map((plan) => (
-            <Card
-              className={cn(
-                "relative w-full text-left",
-                plan.popular && "ring-2 ring-primary"
-              )}
-              key={plan.id}
-            >
-              {plan.popular && (
-                <Badge className="-translate-x-1/2 -translate-y-1/2 absolute top-0 left-1/2 rounded-full">
-                  Popular
-                </Badge>
-              )}
-              <CardHeader>
-                <CardTitle className="font-medium text-xl">
-                  {plan.name}
-                </CardTitle>
-                <CardDescription>
-                  <p>{plan.description}</p>
-                  <NumberFlow
-                    className="font-medium text-foreground"
-                    format={{
-                      style: "currency",
-                      currency: "USD",
-                      maximumFractionDigits: 0,
-                    }}
-                    suffix={
-                      plan.id === "yearly"
-                        ? "/month, billed yearly."
-                        : "/month, billed monthly."
-                    }
-                    value={plan.price[frequency]}
-                  />
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-2">
-                {plan.features.map((feature, index) => (
-                  <div
-                    className="flex items-center gap-2 text-muted-foreground text-sm"
-                    key={index}
+        {/* Pricing Table */}
+        <div className="mt-8 w-full max-w-4xl mx-auto overflow-x-auto">
+          <table className="min-w-full border-collapse rounded-lg overflow-hidden shadow ring-1 ring-muted">
+            <thead>
+              <tr className="bg-muted">
+                <th className="py-4 px-6 text-lg font-semibold text-left"></th>
+                {plans.map((plan) => (
+                  <th
+                    key={plan.id}
+                    className={cn(
+                      "py-4 px-6 text-lg font-semibold text-center",
+                      plan.popular && "relative"
+                    )}
                   >
-                    <BadgeCheck className="h-4 w-4" />
-                    {feature}
-                  </div>
+                    <div className="flex flex-col items-center">
+                      <span>{plan.name}</span>
+                      {plan.popular && (
+                        <Badge className="absolute top-2 right-2 rounded-full">
+                          Popular
+                        </Badge>
+                      )}
+                      <NumberFlow
+                        className="font-medium text-foreground text-2xl mt-2"
+                        format={{
+                          style: "currency",
+                          currency: "USD",
+                          maximumFractionDigits: 0,
+                        }}
+                        suffix={
+                          plan.id === "yearly"
+                            ? "/month, billed yearly"
+                            : "/month, billed monthly"
+                        }
+                        value={plan.price.monthly}
+                      />
+                    </div>
+                  </th>
                 ))}
-              </CardContent>
-              <CardFooter>
-                <Button
-                  className="w-full"
-                  variant={plan.popular ? "default" : "secondary"}
-                >
-                  {plan.cta}
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="py-4 px-6 text-left font-medium">Description</td>
+                {plans.map((plan) => (
+                  <td key={plan.id} className="py-4 px-6 text-center text-muted-foreground">
+                    {plan.description}
+                  </td>
+                ))}
+              </tr>
+              {plans[0].features.map((_, featureIdx) => (
+                <tr key={featureIdx} className={featureIdx % 2 === 0 ? "bg-accent" : ""}>
+                  <td className="py-4 px-6 text-left font-medium">
+                    {plans[0].features[featureIdx]}
+                  </td>
+                  {plans.map((plan) => (
+                    <td key={plan.id} className="py-4 px-6 text-center">
+                      <BadgeCheck className="inline h-5 w-5 text-primary" />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              <tr>
+                <td className="py-4 px-6"></td>
+                {plans.map((plan) => (
+                  <td key={plan.id} className="py-4 px-6 text-center">
+                    <Button
+                      className="w-full"
+                      variant={plan.popular ? "default" : "secondary"}
+                    >
+                      {plan.cta}
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
