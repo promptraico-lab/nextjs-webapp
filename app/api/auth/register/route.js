@@ -1,6 +1,8 @@
 import joi from "joi";
 import bcrypt from "bcrypt";
 import prisma from "@/lib/prisma";
+import { stripe } from "@/lib/stripe"; // ensure this import is available
+
 const registerSchema = joi.object({
   email: joi.string().email().required(),
   password: joi.string().min(6).required(),
@@ -21,12 +23,12 @@ export async function POST(req) {
   }
 
   // Check if user already exists
-  const user = await prisma.user.findUnique({
+  const userExists = await prisma.user.findUnique({
     where: {
       email: value.email,
     },
   });
-  if (user)
+  if (userExists)
     return new Response(JSON.stringify({ error: "User already exists" }), {
       status: 400,
       headers: jsonHeader,
@@ -35,11 +37,17 @@ export async function POST(req) {
   // Hash the password
   const hashedPassword = await bcrypt.hash(value.password, 10);
 
-  // Create the new user in the database
+  // Create a Stripe customer
+  const customer = await stripe.customers.create({
+    email: value.email,
+  });
+
+  // Create a new user in the database
   const newUser = await prisma.user.create({
     data: {
       email: value.email,
       password: hashedPassword,
+      stripeCustomerId: customer.id,
     },
   });
 
