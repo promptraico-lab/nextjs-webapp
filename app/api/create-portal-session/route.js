@@ -18,7 +18,6 @@ export async function POST(req) {
 
     // Retrieve the checkout session to get the customer ID
     const checkoutSession = await stripe.checkout.sessions.retrieve(session_id);
-    console.log("this is me: ", checkoutSession.customer);
 
     if (!checkoutSession || !checkoutSession.customer) {
       return NextResponse.json(
@@ -32,10 +31,9 @@ export async function POST(req) {
       customer: checkoutSession.customer,
       return_url: `${process.env.NEXT_PUBLIC_WEBSITE_URL}/admin/test`,
     });
-    console.log("this is me 2: ", session.url);
 
     // Redirect to the billing portal
-    return NextResponse.redirect(session.url);
+    return NextResponse.redirect(session.url, { status: 303 });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 400 });
   }
