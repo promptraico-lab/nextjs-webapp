@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
+import prisma from "@/lib/prisma";
 
 // Stripe requires the raw body to verify the signature
 export const config = {
@@ -10,7 +11,6 @@ export const config = {
 
 export async function POST(req) {
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
   let event;
   let body;
 
@@ -34,43 +34,88 @@ export async function POST(req) {
       event = JSON.parse(buf.toString());
     }
 
-    let subscription;
-    let status;
+    // --- Handle subscription logic on checkout.session.completed ---
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object;
 
-    switch (event.type) {
-      case "customer.subscription.trial_will_end":
-        subscription = event.data.object;
-        status = subscription.status;
-        console.log(`Subscription status is ${status}.`);
-        // handleSubscriptionTrialEnding(subscription);
-        break;
-      case "customer.subscription.deleted":
-        subscription = event.data.object;
-        status = subscription.status;
-        console.log(`Subscription status is ${status}.`);
-        // handleSubscriptionDeleted(subscription);
-        break;
-      case "customer.subscription.created":
-        subscription = event.data.object;
-        status = subscription.status;
-        console.log(`Subscription status is ${status}.`);
-        // handleSubscriptionCreated(subscription);
-        break;
-      case "customer.subscription.updated":
-        subscription = event.data.object;
-        status = subscription.status;
-        console.log(`Subscription status is ${status}.`);
-        // handleSubscriptionUpdated(subscription);
-        break;
-      case "entitlements.active_entitlement_summary.updated":
-        subscription = event.data.object;
-        console.log(`Active entitlement summary updated for ${subscription}.`);
-        // handleEntitlementUpdated(subscription);
-        break;
-      default:
-        console.log(`Unhandled event type ${event.type}.`);
+      try {
+        // Retrieve subscription from Stripe if present in session
+        const stripeSubId = session.subscription;
+        const stripeCustomerId = session.customer; // Stripe customer id
+
+        if (!stripeSubId || !stripeCustomerId) {
+          console.error("Missing subscription or customer ID in session.");
+          return new NextResponse("Missing subscription info.", {
+            status: 400,
+          });
+        }
+
+        // Fetch full subscription details from Stripe (to get plan)
+        const stripeSub = await stripe.subscriptions.retrieve(stripeSubId);
+
+        // Get price id, plan type
+        const priceId = stripeSub.items.data[0]?.price?.id;
+        const lookupKey = stripeSub.items.data[0]?.price?.lookup_key;
+
+        // Determine plan type (schema uses: MONTHLY or YEARLY)
+        let planType = "MONTHLY";
+        if (
+          lookupKey?.toLowerCase().includes("year") ||
+          stripeSub.items.data[0]?.price?.recurring?.interval === "year"
+        ) {
+          planType = "YEARLY";
+        }
+
+        // Get current period end timestamp (to Date)
+        let currentPeriodEnd = new Date(
+          stripeSub.items.data[0].current_period_end * 1000
+        );
+
+        // Find the user by stripeCustomerId
+        const user = await prisma.user.findUnique({
+          where: {
+            stripeCustomerId: stripeCustomerId,
+          },
+        });
+
+        if (!user) {
+          console.error(
+            "User not found for Stripe customer ID:",
+            stripeCustomerId
+          );
+          return new NextResponse("User not found.", { status: 404 });
+        }
+
+        // Upsert subscription data for user
+        await prisma.subscription.upsert({
+          where: { userId: user.id },
+          create: {
+            userId: user.id,
+            stripeSubId: stripeSubId,
+            plan: planType,
+            status: "ACTIVE",
+            currentPeriodEnd: currentPeriodEnd,
+          },
+          update: {
+            stripeSubId: stripeSubId,
+            plan: planType,
+            status: "ACTIVE",
+            currentPeriodEnd: currentPeriodEnd,
+            updatedAt: new Date(),
+          },
+        });
+
+        return new NextResponse(null, { status: 200 });
+      } catch (err) {
+        console.error(
+          "Error updating subscription on checkout.session.completed:",
+          err
+        );
+        return new NextResponse("Subscription update error", { status: 500 });
+      }
     }
 
+    // Default: acknowledge event but do nothing
     return new NextResponse(null, { status: 200 });
   } catch (err) {
     console.error("Webhook handler failed:", err);
