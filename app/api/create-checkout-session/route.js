@@ -7,7 +7,6 @@ export async function POST(req) {
       lookup_keys: [req.body.lookup_key],
       expand: ["data.product"],
     });
-    console.log(prices);
 
     const session = await stripe.checkout.sessions.create({
       billing_address_collection: "auto",
@@ -19,10 +18,9 @@ export async function POST(req) {
         },
       ],
       mode: "subscription",
-      success_url: `${process.env.NEXT_PUBLIC_WEBSITE_URL}/admin/test?success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_WEBSITE_URL}/admin/test?canceled=true`,
+      success_url: `${process.env.NEXT_PUBLIC_WEBSITE_URL}/admin/thank-you?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_WEBSITE_URL}/admin/thank-you?canceled=true`,
     });
-    console.log(session);
 
     return NextResponse.redirect(session.url);
   } catch (err) {
