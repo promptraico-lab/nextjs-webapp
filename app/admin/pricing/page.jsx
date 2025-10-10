@@ -1,4 +1,5 @@
 "use client";
+
 import NumberFlow from "@number-flow/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -128,7 +129,11 @@ export default function Pricing() {
                 {plans.map((plan) => (
                   <td key={plan.id} className="py-4 px-6 text-center">
                     <form action="/api/create-checkout-session" method="POST">
-                      <input type="hidden" name="lookup_key" value={plan.lookup_key || plan.id} />
+                      <input
+                        type="hidden"
+                        name="lookup_key"
+                        value={plan.lookup_key || plan.id}
+                      />
                       <Button
                         className="w-full cursor-pointer"
                         variant={plan.popular ? "default" : "secondary"}
