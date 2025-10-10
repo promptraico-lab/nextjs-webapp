@@ -9,7 +9,7 @@ export const config = {
 };
 
 export async function POST(req) {
-  const endpointSecret = "whsec_303e1b8ce5b7e54a5ea06852688f86e537431411172bf8538d4a28664227ede2";
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   let event;
   let body;
