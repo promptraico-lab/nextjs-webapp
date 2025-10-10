@@ -23,14 +23,12 @@ export async function POST(req) {
 
     if (endpointSecret) {
       try {
-        event = stripe.webhooks.constructEvent(
-          buf,
-          signature,
-          endpointSecret
-        );
+        event = stripe.webhooks.constructEvent(buf, signature, endpointSecret);
       } catch (err) {
         console.log(`⚠️  Webhook signature verification failed.`, err.message);
-        return new NextResponse("Webhook Error: " + err.message, { status: 400 });
+        return new NextResponse("Webhook Error: " + err.message, {
+          status: 400,
+        });
       }
     } else {
       event = JSON.parse(buf.toString());
