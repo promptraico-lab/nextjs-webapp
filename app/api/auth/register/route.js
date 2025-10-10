@@ -42,12 +42,38 @@ export async function POST(req) {
     email: value.email,
   });
 
+  const subscription = await stripe.subscriptions.create({
+    customer: customer.id,
+    items: [{ price: "price_1SGPBb08FpMa3rw4NVJ1wId1" }],
+    trial_period_days: 365,
+    payment_settings: {
+      save_default_payment_method: "on_subscription",
+    },
+    trial_settings: {
+      end_behavior: {
+        missing_payment_method: "pause",
+      },
+    },
+  });
+
   // Create a new user in the database
   const newUser = await prisma.user.create({
     data: {
       email: value.email,
       password: hashedPassword,
       stripeCustomerId: customer.id,
+    },
+  });
+
+  await prisma.subscription.create({
+    data: {
+      userId: newUser.id,
+      stripeSubId: subscription.id,
+      plan: "MONTHLY",
+      status: "TRIAL",
+      currentPeriodEnd: new Date(
+        subscription.items.data[0].current_period_end * 1000
+      ),
     },
   });
 
