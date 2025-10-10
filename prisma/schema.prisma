@@ -47,6 +47,8 @@ enum Plan {
 }
 
 enum SubStatus {
+  TRIAL
+  PAUSED
   ACTIVE
   CANCELED
   EXPIRED
