@@ -2,18 +2,8 @@
 import NumberFlow from "@number-flow/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { ArrowRight, BadgeCheck } from "lucide-react";
-import { useState } from "react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const plans = [
   {
@@ -110,13 +100,19 @@ export default function Pricing() {
               <tr>
                 <td className="py-4 px-6 text-left font-medium">Description</td>
                 {plans.map((plan) => (
-                  <td key={plan.id} className="py-4 px-6 text-center text-muted-foreground">
+                  <td
+                    key={plan.id}
+                    className="py-4 px-6 text-center text-muted-foreground"
+                  >
                     {plan.description}
                   </td>
                 ))}
               </tr>
               {plans[0].features.map((_, featureIdx) => (
-                <tr key={featureIdx} className={featureIdx % 2 === 0 ? "bg-accent" : ""}>
+                <tr
+                  key={featureIdx}
+                  className={featureIdx % 2 === 0 ? "bg-accent" : ""}
+                >
                   <td className="py-4 px-6 text-left font-medium">
                     {plans[0].features[featureIdx]}
                   </td>
