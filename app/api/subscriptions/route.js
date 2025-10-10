@@ -45,11 +45,24 @@ export async function GET(req) {
       },
     });
 
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        promptOptimizations: true,
+      },
+    });
+
     if (!subscription) {
-      return NextResponse.json({ subscription: null });
+      return NextResponse.json({
+        subscription: null,
+        promptOptimizations: user?.promptOptimizations ?? null,
+      });
     }
 
-    return NextResponse.json({ subscription });
+    return NextResponse.json({
+      ...subscription,
+      promptOptimizations: user?.promptOptimizations ?? null,
+    });
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to fetch subscription info." },
