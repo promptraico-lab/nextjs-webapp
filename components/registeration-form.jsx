@@ -9,8 +9,10 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import apiClient from "@/lib/apiClient";
 import { toast } from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 export function RegisterForm({ className, ...props }) {
+  const router = useRouter();
   const { register, handleSubmit, reset } = useForm();
   const onSubmit = async (data) => {
     try {
@@ -19,6 +21,7 @@ export function RegisterForm({ className, ...props }) {
       if (response.ok) {
         toast.success("User registered successfully!");
         reset();
+        router.push("/login");
       } else {
         toast.error(
           response.data?.error ||
