@@ -127,13 +127,17 @@ export default function Pricing() {
                 <td className="py-4 px-6"></td>
                 {plans.map((plan) => (
                   <td key={plan.id} className="py-4 px-6 text-center">
-                    <Button
-                      className="w-full"
-                      variant={plan.popular ? "default" : "secondary"}
-                    >
-                      {plan.cta}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
+                    <form action="/api/create-checkout-session" method="POST">
+                      <input type="hidden" name="lookup_key" value={plan.lookup_key || plan.id} />
+                      <Button
+                        className="w-full cursor-pointer"
+                        variant={plan.popular ? "default" : "secondary"}
+                        type="submit"
+                      >
+                        {plan.cta}
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </form>
                   </td>
                 ))}
               </tr>

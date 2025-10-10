@@ -3,10 +3,15 @@ import { NextResponse } from "next/server";
 
 export async function POST(req) {
   try {
+    // Parse form data from the request
+    const formData = await req.formData();
+    const lookup_key = formData.get("lookup_key");
+    
     const prices = await stripe.prices.list({
-      lookup_keys: [req.body.lookup_key],
+      lookup_keys: [lookup_key],
       expand: ["data.product"],
     });
+    console.log({ lookup_key });
 
     const session = await stripe.checkout.sessions.create({
       billing_address_collection: "auto",
