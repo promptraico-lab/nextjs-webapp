@@ -40,7 +40,6 @@ export async function GET(req) {
         status: true,
         currentPeriodEnd: true,
         createdAt: true,
-        updatedAt: true,
         stripeSubId: true,
       },
     });

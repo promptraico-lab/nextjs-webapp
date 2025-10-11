@@ -101,7 +101,6 @@ export async function POST(req) {
             plan: planType,
             status: "ACTIVE",
             currentPeriodEnd: currentPeriodEnd,
-            updatedAt: new Date(),
           },
         });
 
