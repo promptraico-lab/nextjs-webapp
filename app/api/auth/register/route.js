@@ -1,7 +1,10 @@
 import joi from "joi";
 import bcrypt from "bcrypt";
 import prisma from "@/lib/prisma";
+import { createClient } from "@/utils/supabase/server";
+import { cookies } from "next/headers";
 import { stripe } from "@/lib/stripe"; // ensure this import is available
+import { createId } from "@paralleldrive/cuid2";
 
 const registerSchema = joi.object({
   email: joi.string().email().required(),
@@ -11,6 +14,8 @@ const registerSchema = joi.object({
 const jsonHeader = { "Content-Type": "application/json" };
 
 export async function POST(req) {
+  const supabase = createClient(await cookies());
+
   const body = await req.json();
 
   // Validate the request body
@@ -22,13 +27,14 @@ export async function POST(req) {
     });
   }
 
-  // Check if user already exists
-  const userExists = await prisma.user.findUnique({
-    where: {
-      email: value.email,
-    },
-  });
-  if (userExists)
+  // Check if user already exists using Supabase
+  const { data: existingUser } = await supabase
+    .from("User")
+    .select("*")
+    .eq("email", value.email)
+    .single();
+
+  if (existingUser)
     return new Response(JSON.stringify({ error: "User already exists" }), {
       status: 400,
       headers: jsonHeader,
@@ -56,26 +62,49 @@ export async function POST(req) {
     },
   });
 
-  // Create a new user in the database
-  const newUser = await prisma.user.create({
-    data: {
-      email: value.email,
-      password: hashedPassword,
-      stripeCustomerId: customer.id,
-    },
-  });
+  // Create a new user in the database using Supabase
+  const { data: newUser, error: userError } = await supabase
+    .from("User")
+    .insert([
+      {
+        id: createId(),
+        email: value.email,
+        password: hashedPassword,
+        stripeCustomerId: customer.id,
+      },
+    ])
+    .select("*")
+    .single();
 
-  await prisma.subscription.create({
-    data: {
-      userId: newUser.id,
-      stripeSubId: subscription.id,
-      plan: "MONTHLY",
-      status: "TRIAL",
-      currentPeriodEnd: new Date(
-        subscription.items.data[0].current_period_end * 1000
-      ),
-    },
-  });
+  if (userError) {
+    return new Response(JSON.stringify({ error: userError.message }), {
+      status: 500,
+      headers: jsonHeader,
+    });
+  }
+
+  // Create a new subscription in the database using Supabase
+  const { error: subscriptionError } = await supabase
+    .from("Subscription")
+    .insert([
+      {
+        id: createId(),
+        userId: newUser.id,
+        stripeSubId: subscription.id,
+        plan: "MONTHLY",
+        status: "TRIAL",
+        currentPeriodEnd: new Date(
+          subscription.items.data[0].current_period_end * 1000
+        ),
+      },
+    ]);
+
+  if (subscriptionError) {
+    return new Response(JSON.stringify({ error: subscriptionError.message }), {
+      status: 500,
+      headers: jsonHeader,
+    });
+  }
 
   return new Response(
     JSON.stringify({
