@@ -15,30 +15,28 @@ datasource db {
 }
 
 model User {
-  id                 String        @id @default(cuid())
-  email              String        @unique
-  name               String?
-  password           String
-  bio                String?
-  location           String?
-  phone              String?
-  stripeCustomerId   String?       @unique
-  promptOptimizations Int          @default(10) // Each user starts with 10
-  subscription       Subscription?
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
+  id                  String        @id @default(cuid())
+  email               String        @unique
+  name                String?
+  password            String
+  bio                 String?
+  location            String?
+  phone               String?
+  stripeCustomerId    String?       @unique
+  promptOptimizations Int           @default(10) // Each user starts with 10
+  subscription        Subscription?
+  createdAt           DateTime      @default(now())
 }
 
 model Subscription {
-  id               String     @id @default(cuid())
-  userId           String     @unique
-  user             User       @relation(fields: [userId], references: [id])
-  stripeSubId      String     @unique
-  plan             Plan       // No FREE plan; only paid plans have subscriptions
-  status           SubStatus  @default(ACTIVE)
+  id               String    @id @default(cuid())
+  userId           String    @unique
+  user             User      @relation(fields: [userId], references: [id])
+  stripeSubId      String    @unique
+  plan             Plan // No FREE plan; only paid plans have subscriptions
+  status           SubStatus @default(ACTIVE)
   currentPeriodEnd DateTime
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
+  createdAt        DateTime  @default(now())
 }
 
 enum Plan {
