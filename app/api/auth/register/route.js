@@ -1,6 +1,5 @@
 import joi from "joi";
 import bcrypt from "bcrypt";
-import prisma from "@/lib/prisma";
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 import { stripe } from "@/lib/stripe"; // ensure this import is available
