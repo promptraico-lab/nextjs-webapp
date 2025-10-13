@@ -24,7 +24,7 @@ model User {
   location            String?
   phone               String?
   stripeCustomerId    String?       @unique
-  promptOptimizations Int           @default(10) // Each user starts with 10
+  promptOptimizations Int           @default(5) // Each user starts with 10
   subscription        Subscription?
   createdAt           DateTime      @default(now())
 }
