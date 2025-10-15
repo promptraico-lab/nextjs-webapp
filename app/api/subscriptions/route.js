@@ -63,6 +63,7 @@ export async function GET(req) {
       promptOptimizations: user?.promptOptimizations ?? null,
     });
   } catch (error) {
+    console.log(error);
     return NextResponse.json(
       { error: "Failed to fetch subscription info." },
       { status: 500 }
