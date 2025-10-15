@@ -29,7 +29,7 @@ export async function POST(req) {
     // Create the billing portal session
     const session = await stripe.billingPortal.sessions.create({
       customer: checkoutSession.customer,
-      return_url: `${process.env.NEXT_PUBLIC_WEBSITE_URL}/admin/test`,
+      return_url: `${process.env.NEXT_PUBLIC_WEBSITE_URL}/admin/pricing`,
     });
 
     // Redirect to the billing portal
