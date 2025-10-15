@@ -25,53 +25,158 @@ You must ensure that the improved prompt is as close as possible to the target c
 Again: Output ONLY the improved prompt, with no additional commentary, formatting, or markdown. Always optimize the user's prompt, no matter what it is.
 `;
 
+import prisma from "@/lib/prisma";
+import jwt from "jsonwebtoken";
+
 export async function POST(req) {
-  const { prompt, targetLength } = await req.json();
+  try {
+    // Check auth
+    const authHeader = req.headers.get("Authorization") || "";
+    const token = authHeader.replace(/^Bearer\s+/, "").trim();
 
-  // Compose the user message with the prompt and target length
-  let userMessage = prompt;
-  if (typeof targetLength === "number" && targetLength > 0) {
-    userMessage += `\n\nTarget character length: ${targetLength}`;
-  }
-
-  const streamRes = await groq.chat.completions.create({
-    model: "openai/gpt-oss-120b",
-    messages: [
-      {
-        role: "system",
-        content: SYSTEM_PROMPT,
-      },
-      {
-        role: "user",
-        content: userMessage,
-      },
-    ],
-    stream: true,
-    max_completion_tokens: 3500,
-  });
-
-  const stream = new ReadableStream({
-    async start(controller) {
-      try {
-        let response = "";
-
-        for await (let chunk of streamRes) {
-          chunk = chunk.choices[0]?.delta?.content || "";
-          response += chunk;
-
-          controller.enqueue(new TextEncoder().encode(chunk));
+    if (!token) {
+      return new Response(
+        JSON.stringify({ error: "Missing or invalid authorization token." }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
         }
+      );
+    }
 
-        controller.close();
-      } catch (error) {
-        return new Response(error.message, { status: 500 });
+    let decoded;
+    try {
+      decoded = await jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return new Response(
+        JSON.stringify({ error: "Invalid or expired token." }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const userId = decoded.id || decoded.userId;
+    if (!userId) {
+      return new Response(JSON.stringify({ error: "Invalid token payload." }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // Get user's subscription and free prompt optimizations
+    let user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        promptOptimizations: true,
+        subscription: {
+          select: {
+            status: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      return new Response(JSON.stringify({ error: "User not found." }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // Parse prompt input
+    const { prompt, targetLength } = await req.json();
+
+    // Decision branch based on subscription
+    const subStatus = user.subscription?.status;
+    let promptsLeft = null;
+
+    if ((!subStatus || subStatus === "TRIAL") && targetLength == 100) {
+      // On trial: Check and decrease promptOptimizations if available, else error
+      if (user.promptOptimizations > 0) {
+        // Decrement the count and fetch the new value
+        const updatedUser = await prisma.user.update({
+          where: { id: userId },
+          data: { promptOptimizations: { decrement: 1 } },
+          select: { promptOptimizations: true },
+        });
+        promptsLeft = updatedUser.promptOptimizations;
+        user = { ...user, promptOptimizations: promptsLeft };
+      } else {
+        return new Response(
+          JSON.stringify({
+            error:
+              "No remaining free optimized prompts. Please subscribe to a paid plan.",
+            remaining: 0,
+          }),
+          { status: 403, headers: { "Content-Type": "application/json" } }
+        );
       }
-    },
-  });
+    }
 
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/plain",
-    },
-  });
+    // Compose the user message with the prompt and target length
+    let userMessage = prompt;
+    if (typeof targetLength === "number" && targetLength > 0) {
+      userMessage += `\n\nTarget character length: ${targetLength}`;
+    }
+
+    const streamRes = await groq.chat.completions.create({
+      model: "openai/gpt-oss-120b",
+      messages: [
+        {
+          role: "system",
+          content: SYSTEM_PROMPT,
+        },
+        {
+          role: "user",
+          content: userMessage,
+        },
+      ],
+      stream: true,
+      max_completion_tokens: 3500,
+    });
+
+    const encoder = new TextEncoder();
+
+    let firstChunkSent = false;
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          let response = "";
+          for await (let chunk of streamRes) {
+            chunk = chunk.choices[0]?.delta?.content || "";
+            response += chunk;
+
+            // On first chunk, send the remaining prompts in a header-like initial meta message if relevant
+            if (!firstChunkSent) {
+              if (promptsLeft !== null) {
+                // we prepend a meta JSON object, then \n\n, then continue with the actual prompt optimization
+                controller.enqueue(encoder.encode(JSON.stringify({ remaining: promptsLeft }) + "\n\n"));
+              }
+              firstChunkSent = true;
+            }
+
+            controller.enqueue(encoder.encode(chunk));
+          }
+
+          controller.close();
+        } catch (error) {
+          controller.error(error);
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain",
+      },
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: "Internal server error." }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 }
