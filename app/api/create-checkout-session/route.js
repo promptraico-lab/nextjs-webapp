@@ -86,7 +86,13 @@ export async function POST(req) {
       cancel_url: `${process.env.NEXT_PUBLIC_WEBSITE_URL}/admin/thank-you?canceled=true`,
     });
 
-    return NextResponse.redirect(session.url, { status: 303 });
+    // Determine request source and respond accordingly
+    const source = req.headers.get("x-request-source");
+    if (source && source.toLowerCase() === "extension") {
+      return NextResponse.json({ url: session.url });
+    } else {
+      return NextResponse.redirect(session.url, { status: 303 });
+    }
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 400 });
   }
