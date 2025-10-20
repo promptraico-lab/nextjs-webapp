@@ -49,7 +49,7 @@ export async function POST(req) {
 
   const subscription = await stripe.subscriptions.create({
     customer: customer.id,
-    items: [{ price: "price_1SGPBb08FpMa3rw4NVJ1wId1" }],
+    items: [{ price: process.env.STRIPE_MONTHLY_PRICE_ID }],
     trial_period_days: 365,
     payment_settings: {
       save_default_payment_method: "on_subscription",
