@@ -110,6 +110,71 @@ export function Menu({ isOpen }) {
               )}
             </li>
           ))}
+          <li className="w-full">
+            <div className="w-full pt-2">
+              <TooltipProvider disableHoverableContent>
+                <Tooltip delayDuration={100}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start h-10 mb-1 text-left"
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(
+                            "/api/create-portal-session",
+                            { method: "POST" }
+                          );
+                          const data = await res.json();
+                          if (data.url) {
+                            window.location.href = data.url;
+                          } else if (data.error) {
+                            alert(
+                              "Failed to open billing portal: " + data.error
+                            );
+                          }
+                        } catch (err) {
+                          alert("Billing portal unavailable.");
+                        }
+                      }}
+                    >
+                      <span className={cn(isOpen === false ? "" : "mr-4")}>
+                        <svg
+                          width="18"
+                          height="18"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <rect
+                            x="3"
+                            y="5"
+                            width="18"
+                            height="14"
+                            rx="2"
+                            strokeWidth="2"
+                          />
+                          <path strokeWidth="2" d="M3 10h18" />
+                        </svg>
+                      </span>
+                      <p
+                        className={cn(
+                          "max-w-[200px] truncate",
+                          isOpen === false
+                            ? "-translate-x-96 opacity-0"
+                            : "translate-x-0 opacity-100"
+                        )}
+                      >
+                        Manage Billing
+                      </p>
+                    </Button>
+                  </TooltipTrigger>
+                  {isOpen === false && (
+                    <TooltipContent side="right">Manage Billing</TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </li>
           <li className="w-full grow flex items-end">
             <TooltipProvider disableHoverableContent>
               <Tooltip delayDuration={100}>
