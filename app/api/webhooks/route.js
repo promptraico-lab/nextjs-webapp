@@ -44,7 +44,7 @@ export async function POST(req) {
       try {
         // Retrieve subscription from Stripe if present in session
         const stripeSubId = session.subscription;
-        const stripeCustomerId = session.customer; // Stripe customer id
+        const stripeCustomerId = session.customer;
 
         if (!stripeSubId || !stripeCustomerId) {
           console.error("Missing subscription or customer ID in session.");
@@ -53,11 +53,10 @@ export async function POST(req) {
           });
         }
 
-        // Fetch full subscription details from Stripe (to get plan)
+        // Fetch full subscription details from Stripe (to get plan details)
         const stripeSub = await stripe.subscriptions.retrieve(stripeSubId);
 
         // Get price id, plan type
-        const priceId = stripeSub.items.data[0]?.price?.id;
         const lookupKey = stripeSub.items.data[0]?.price?.lookup_key;
 
         // Determine plan type (schema uses: MONTHLY or YEARLY)
@@ -69,16 +68,14 @@ export async function POST(req) {
           planType = "YEARLY";
         }
 
-        // Get current period end timestamp (to Date)
+        // Get current period end timestamp
         let currentPeriodEnd = new Date(
           stripeSub.items.data[0].current_period_end * 1000
         );
 
-        // Find the user by stripeCustomerId
+        // Find user by stripeCustomerId
         const user = await prisma.user.findUnique({
-          where: {
-            stripeCustomerId: stripeCustomerId,
-          },
+          where: { stripeCustomerId },
         });
 
         if (!user) {
@@ -89,21 +86,21 @@ export async function POST(req) {
           return new NextResponse("User not found.", { status: 404 });
         }
 
-        // Upsert subscription data for user
+        // Upsert/activate subscription for user in our DB
         await prisma.subscription.upsert({
           where: { userId: user.id },
           create: {
             userId: user.id,
-            stripeSubId: stripeSubId,
+            stripeSubId,
             plan: planType,
             status: "ACTIVE",
-            currentPeriodEnd: currentPeriodEnd,
+            currentPeriodEnd,
           },
           update: {
-            stripeSubId: stripeSubId,
+            stripeSubId,
             plan: planType,
             status: "ACTIVE",
-            currentPeriodEnd: currentPeriodEnd,
+            currentPeriodEnd,
           },
         });
 
