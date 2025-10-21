@@ -24,6 +24,17 @@ export async function POST(req) {
     // Find user by email
     const user = await prisma.user.findUnique({
       where: { email },
+      include: {
+        subscription: {
+          select: {
+            id: true,
+            stripeSubId: true,
+            plan: true,
+            status: true,
+            currentPeriodEnd: true,
+          },
+        },
+      },
     });
     if (!user) {
       return new Response(
