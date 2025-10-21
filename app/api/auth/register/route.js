@@ -47,20 +47,6 @@ export async function POST(req) {
     email: value.email,
   });
 
-  const subscription = await stripe.subscriptions.create({
-    customer: customer.id,
-    items: [{ price: process.env.STRIPE_MONTHLY_PRICE_ID }],
-    trial_period_days: 365,
-    payment_settings: {
-      save_default_payment_method: "on_subscription",
-    },
-    trial_settings: {
-      end_behavior: {
-        missing_payment_method: "pause",
-      },
-    },
-  });
-
   // Create a new user in the database using Supabase
   const { data: newUser, error: userError } = await supabase
     .from("User")
@@ -77,29 +63,6 @@ export async function POST(req) {
 
   if (userError) {
     return new Response(JSON.stringify({ error: userError.message }), {
-      status: 500,
-      headers: jsonHeader,
-    });
-  }
-
-  // Create a new subscription in the database using Supabase
-  const { error: subscriptionError } = await supabase
-    .from("Subscription")
-    .insert([
-      {
-        id: createId(),
-        userId: newUser.id,
-        stripeSubId: subscription.id,
-        plan: "MONTHLY",
-        status: "TRIAL",
-        currentPeriodEnd: new Date(
-          subscription.items.data[0].current_period_end * 1000
-        ),
-      },
-    ]);
-
-  if (subscriptionError) {
-    return new Response(JSON.stringify({ error: subscriptionError.message }), {
       status: 500,
       headers: jsonHeader,
     });
