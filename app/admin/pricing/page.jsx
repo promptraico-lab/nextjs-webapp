@@ -1,10 +1,12 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import NumberFlow from "@number-flow/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ArrowRight, BadgeCheck } from "lucide-react";
+import useAuth from "@/hooks/useAuth";
 
 const plans = [
   {
@@ -94,6 +96,15 @@ export default function Pricing() {
     );
   }
 
+  // Determine user's plan status
+  // The actual property may be `currentUser.plan` or `currentUser.subscription`, adjust as needed.
+  const userPlan =
+    currentUser?.subscription?.plan?.toLowerCase?.() || "";
+
+  // "monthly" disables monthly button, "yearly" disables both
+  const isMonthly = userPlan === "monthly";
+  const isYearly = userPlan === "yearly";
+
   return (
     <div className="not-prose flex flex-col gap-16 px-8 py-24 text-center">
       <div className="flex flex-col items-center justify-center gap-8">
@@ -176,25 +187,43 @@ export default function Pricing() {
               ))}
               <tr>
                 <td className="py-4 px-6"></td>
-                {plans.map((plan) => (
-                  <td key={plan.id} className="py-4 px-6 text-center">
-                    <form action="/api/create-checkout-session" method="POST">
-                      <input
-                        type="hidden"
-                        name="lookup_key"
-                        value={plan.lookup_key || plan.id}
-                      />
-                      <Button
-                        className="w-full cursor-pointer"
-                        variant={plan.popular ? "default" : "secondary"}
-                        type="submit"
-                      >
-                        {plan.cta}
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </form>
-                  </td>
-                ))}
+                {plans.map((plan) => {
+                  // If user has monthly plan: disable monthly subscribe
+                  // If user has yearly plan: disable both subscribe buttons
+                  const isThisMonthly = plan.id === "monthly";
+                  const isThisYearly = plan.id === "yearly";
+                  let disabled = false;
+                  let buttonText = plan.cta;
+
+                  if (isYearly) {
+                    disabled = true;
+                    buttonText = "Already Subscribed";
+                  } else if (isMonthly && isThisMonthly) {
+                    disabled = true;
+                    buttonText = "Already Subscribed";
+                  }
+
+                  return (
+                    <td key={plan.id} className="py-4 px-6 text-center">
+                      <form action="/api/create-checkout-session" method="POST">
+                        <input
+                          type="hidden"
+                          name="lookup_key"
+                          value={plan.lookup_key || plan.id}
+                        />
+                        <Button
+                          className="w-full cursor-pointer"
+                          variant={plan.popular ? "default" : "secondary"}
+                          type="submit"
+                          disabled={disabled}
+                        >
+                          {buttonText}
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </form>
+                    </td>
+                  );
+                })}
               </tr>
             </tbody>
           </table>
