@@ -35,7 +35,10 @@ export async function POST(req) {
     }
 
     // --- Handle subscription logic on checkout.session.completed ---
-    if (event.type === "checkout.session.completed") {
+    if (
+      event.type === "checkout.session.completed" ||
+      event.type === "checkout.session.async_payment_succeeded"
+    ) {
       const session = event.data.object;
 
       try {
