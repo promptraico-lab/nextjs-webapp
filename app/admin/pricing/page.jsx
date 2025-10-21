@@ -44,6 +44,56 @@ const plans = [
 ];
 
 export default function Pricing() {
+  const { currentUser, updateUser } = useAuth();
+  const [loading, setLoading] = useState(!currentUser);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setLoading(true);
+      updateUser()
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]);
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-background">
+        <div className="w-full max-w-md space-y-6">
+          <div className="h-8 w-1/3 bg-gray-200 rounded animate-pulse" />
+          <div className="space-y-4">
+            <div className="h-5 w-1/4 bg-gray-200 rounded animate-pulse" />
+            <div className="h-10 w-full bg-gray-200 rounded animate-pulse" />
+          </div>
+          <div className="space-y-4">
+            <div className="h-5 w-1/4 bg-gray-200 rounded animate-pulse" />
+            <div className="h-10 w-full bg-gray-200 rounded animate-pulse" />
+          </div>
+          <div className="space-y-4">
+            <div className="h-5 w-1/4 bg-gray-200 rounded animate-pulse" />
+            <div className="h-10 w-full bg-gray-200 rounded animate-pulse" />
+          </div>
+          <div className="space-y-4">
+            <div className="h-5 w-1/4 bg-gray-200 rounded animate-pulse" />
+            <div className="h-10 w-full bg-gray-200 rounded animate-pulse" />
+          </div>
+          <div className="h-10 w-1/2 bg-gray-200 rounded animate-pulse mx-auto" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-background">
+        <div className="text-center text-muted-foreground">No user found.</div>
+      </div>
+    );
+  }
+
   return (
     <div className="not-prose flex flex-col gap-16 px-8 py-24 text-center">
       <div className="flex flex-col items-center justify-center gap-8">
