@@ -114,6 +114,74 @@ export async function POST(req) {
       }
     }
 
+    // --- Handle subscription logic on customer.subscription.updated ---
+    if (event.type === "customer.subscription.updated") {
+      const subscription = event.data.object;
+      const stripeSubId = subscription.id;
+      const stripeCustomerId = subscription.customer;
+      const status = subscription.status;
+      const items = subscription.items?.data?.[0];
+      const price = items?.price;
+      const lookupKey = price?.lookup_key;
+
+      let planType = "MONTHLY";
+      if (
+        lookupKey?.toLowerCase().includes("year") ||
+        price?.recurring?.interval === "year"
+      ) {
+        planType = "YEARLY";
+      }
+      const currentPeriodEnd = subscription.items.data[0].current_period_end
+        ? new Date(subscription.items.data[0].current_period_end * 1000)
+        : null;
+
+      // Find user by stripeCustomerId
+      const user = await prisma.user.findUnique({
+        where: { stripeCustomerId },
+      });
+
+      if (!user) {
+        console.error(
+          "User not found for Stripe customer ID:",
+          stripeCustomerId
+        );
+        return new NextResponse("User not found.", { status: 404 });
+      }
+
+      // Map Stripe status to your app subscription status or flags
+      let appStatus;
+      if (status === "active") {
+        // Full paid access
+        appStatus = "ACTIVE";
+      } else if (
+        status === "past_due" ||
+        status === "unpaid" ||
+        status === "incomplete"
+      ) {
+        // Show payment warning (keep subscription active, set a "payment warning" flag maybe)
+        appStatus = "WARNING";
+      } else if (status === "canceled" || status === "incomplete_expired") {
+        // Disable paid features
+        appStatus = "CANCELED";
+      } else {
+        // Unhandled status, default to canceled for safety.
+        appStatus = "CANCELED";
+      }
+
+      await prisma.subscription.update({
+        where: { userId: user.id },
+        data: {
+          stripeSubId,
+          plan: planType,
+          status: appStatus,
+          currentPeriodEnd,
+          user: { connect: { id: user.id } },
+        },
+      });
+
+      return new NextResponse(null, { status: 200 });
+    }
+
     // Default: acknowledge event but do nothing
     return new NextResponse(null, { status: 200 });
   } catch (err) {
