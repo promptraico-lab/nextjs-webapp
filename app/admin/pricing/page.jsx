@@ -98,12 +98,14 @@ export default function Pricing() {
 
   // Determine user's plan status
   // The actual property may be `currentUser.plan` or `currentUser.subscription`, adjust as needed.
-  const userPlan =
-    currentUser?.subscription?.plan?.toLowerCase?.() || "";
+  const userPlan = currentUser?.subscription?.plan?.toLowerCase?.() || "";
+  const userPlanStatus =
+    currentUser?.subscription?.status?.toLowerCase?.() || "";
+  console.log(userPlan, userPlanStatus);
 
   // "monthly" disables monthly button, "yearly" disables both
-  const isMonthly = userPlan === "monthly";
-  const isYearly = userPlan === "yearly";
+  const isMonthly = userPlan === "monthly" && userPlanStatus === "active";
+  const isYearly = userPlan === "yearly" && userPlanStatus === "active";
 
   return (
     <div className="not-prose flex flex-col gap-16 px-8 py-24 text-center">
