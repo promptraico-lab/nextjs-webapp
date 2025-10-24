@@ -97,15 +97,14 @@ export default function Pricing() {
   }
 
   // Determine user's plan status
-  // The actual property may be `currentUser.plan` or `currentUser.subscription`, adjust as needed.
   const userPlan = currentUser?.subscription?.plan?.toLowerCase?.() || "";
-  const userPlanStatus =
-    currentUser?.subscription?.status?.toLowerCase?.() || "";
-  console.log(userPlan, userPlanStatus);
+  const userPlanStatus = currentUser?.subscription?.status?.toLowerCase?.() || "";
 
-  // "monthly" disables monthly button, "yearly" disables both
-  const isMonthly = userPlan === "monthly" && userPlanStatus === "active";
-  const isYearly = userPlan === "yearly" && userPlanStatus === "active";
+  // User has any *active* subscription
+  const hasActiveSubscription = userPlanStatus === "active" && (userPlan === "monthly" || userPlan === "yearly");
+
+  // Used for the animation of Manage Billing button (eg: always visible for now)
+  const isOpen = true;
 
   return (
     <div className="not-prose flex flex-col gap-16 px-8 py-24 text-center">
@@ -119,6 +118,9 @@ export default function Pricing() {
             10 free prompt optimizations
           </span>{" "}
           when you install promptR Chrome Extension!
+        </p>
+        <p className="mx-auto mt-2 mb-0 max-w-2xl text-balance text-base text-muted-foreground">
+          To upgrade or cancel your plan, click on the Manage Billing button below.
         </p>
         {/* Pricing Table */}
         <div className="mt-8 w-full max-w-4xl mx-auto overflow-x-auto">
@@ -190,21 +192,9 @@ export default function Pricing() {
               <tr>
                 <td className="py-4 px-6"></td>
                 {plans.map((plan) => {
-                  // If user has monthly plan: disable monthly subscribe
-                  // If user has yearly plan: disable both subscribe buttons
-                  const isThisMonthly = plan.id === "monthly";
-                  const isThisYearly = plan.id === "yearly";
-                  let disabled = false;
-                  let buttonText = plan.cta;
-
-                  if (isYearly) {
-                    disabled = true;
-                    buttonText = "Already Subscribed";
-                  } else if (isMonthly && isThisMonthly) {
-                    disabled = true;
-                    buttonText = "Already Subscribed";
-                  }
-
+                  // If the user has any active subscription, disable all buttons
+                  const disabled = hasActiveSubscription;
+                  const buttonText = hasActiveSubscription ? "Already Subscribed" : plan.cta;
                   return (
                     <td key={plan.id} className="py-4 px-6 text-center">
                       <form action="/api/create-checkout-session" method="POST">
@@ -230,6 +220,58 @@ export default function Pricing() {
             </tbody>
           </table>
         </div>
+        {/* Single Manage Billing button below the table */}
+        {hasActiveSubscription && (
+          <div className="w-full max-w-sm mx-auto mt-8">
+            <Button
+              variant="ghost"
+              className="w-full justify-start h-10 mb-1 text-left"
+              onClick={async () => {
+                try {
+                  const res = await fetch("/api/create-portal-session", { method: "POST" });
+                  const data = await res.json();
+                  if (data.url) {
+                    window.location.href = data.url;
+                  } else if (data.error) {
+                    alert("Failed to open billing portal: " + data.error);
+                  }
+                } catch (err) {
+                  alert("Billing portal unavailable.");
+                }
+              }}
+            >
+              <span className={cn(isOpen === false ? "" : "mr-4")}>
+                <svg
+                  width="18"
+                  height="18"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <rect
+                    x="3"
+                    y="5"
+                    width="18"
+                    height="14"
+                    rx="2"
+                    strokeWidth="2"
+                  />
+                  <path strokeWidth="2" d="M3 10h18" />
+                </svg>
+              </span>
+              <p
+                className={cn(
+                  "max-w-[200px] truncate",
+                  isOpen === false
+                    ? "-translate-x-96 opacity-0"
+                    : "translate-x-0 opacity-100"
+                )}
+              >
+                Manage Billing
+              </p>
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
