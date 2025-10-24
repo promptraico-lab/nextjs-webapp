@@ -1,11 +1,15 @@
 import prisma from "@/lib/prisma";
+import { createClient } from "@/utils/supabase/server";
 import jwt from "jsonwebtoken";
 import { stripe } from "@/lib/stripe";
+import { cookies } from "next/headers";
+import { createId } from "@paralleldrive/cuid2";
 
 // This is the Google redirect URL after login with @react-oauth/google
 export async function POST(req) {
   const headers = new Headers();
   headers.set("Content-Type", "application/json");
+  const supabase = createClient(await cookies());
 
   try {
     let { user: googleUser } = await req.json();
@@ -39,25 +43,27 @@ export async function POST(req) {
         email: googleUser.email,
       });
 
-      user = await prisma.user.create({
-        data: {
-          email: googleUser.email,
-          password: "",
-          name: googleUser.name,
-          stripeCustomerId: customer.id,
-        },
-        include: {
-          subscription: {
-            select: {
-              id: true,
-              stripeSubId: true,
-              plan: true,
-              status: true,
-              currentPeriodEnd: true,
-            },
+      // Create a new user in the database using Supabase
+      const { data, error: userError } = await supabase
+        .from("User")
+        .insert([
+          {
+            id: createId(),
+            email: googleUser.email,
+            password: "",
+            stripeCustomerId: customer.id,
           },
-        },
-      });
+        ])
+        .select("*")
+        .single();
+
+      if (userError) {
+        return new Response(JSON.stringify({ error: userError.message }), {
+          status: 500,
+          headers: jsonHeader,
+        });
+      }
+      user = data;
     }
 
     // Issue JWT like in /auth/login/route.js
@@ -79,10 +85,11 @@ export async function POST(req) {
       headers,
     });
   } catch (error) {
+    console.log("Handeling google oauth: ", error);
+
     return new Response(
       JSON.stringify({
         message: "Error handling Google OAuth code",
-        error: error.message,
       }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
