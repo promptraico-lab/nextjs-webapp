@@ -9,10 +9,14 @@ generator client {
   output   = "../lib/generated/prisma"
 }
 
+// datasource db {
+//   provider  = "postgresql"
+//   url       = env("DATABASE_URL")
+//   directUrl = env("DIRECT_URL")
+// }
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL_LOCAL")
 }
 
 model User {
@@ -33,7 +37,7 @@ model Subscription {
   id               String    @id @default(cuid())
   userId           String    @unique
   user             User      @relation(fields: [userId], references: [id])
-  stripeSubId      String    @unique
+  stripeSubId      String?   @unique // Now nullable; unique allows multiple NULLs in PostgreSQL
   plan             Plan // No FREE plan; only paid plans have subscriptions
   status           SubStatus @default(ACTIVE)
   currentPeriodEnd DateTime
