@@ -1,4 +1,6 @@
 import { Groq } from "groq-sdk";
+import prisma from "@/lib/prisma";
+import jwt from "jsonwebtoken";
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
@@ -24,9 +26,6 @@ You must ensure that the improved prompt is as close as possible to the target c
 
 Again: Output ONLY the improved prompt, with no additional commentary, formatting, or markdown. Always optimize the user's prompt, no matter what it is.
 `;
-
-import prisma from "@/lib/prisma";
-import jwt from "jsonwebtoken";
 
 export async function POST(req) {
   try {
@@ -153,7 +152,11 @@ export async function POST(req) {
             if (!firstChunkSent) {
               if (promptsLeft !== null) {
                 // we prepend a meta JSON object, then \n\n, then continue with the actual prompt optimization
-                controller.enqueue(encoder.encode(JSON.stringify({ remaining: promptsLeft }) + "\n\n"));
+                controller.enqueue(
+                  encoder.encode(
+                    JSON.stringify({ remaining: promptsLeft }) + "\n\n"
+                  )
+                );
               }
               firstChunkSent = true;
             }

@@ -98,10 +98,13 @@ export default function Pricing() {
 
   // Determine user's plan status
   const userPlan = currentUser?.subscription?.plan?.toLowerCase?.() || "";
-  const userPlanStatus = currentUser?.subscription?.status?.toLowerCase?.() || "";
+  const userPlanStatus =
+    currentUser?.subscription?.status?.toLowerCase?.() || "";
 
   // User has any *active* subscription
-  const hasActiveSubscription = userPlanStatus === "active" && (userPlan === "monthly" || userPlan === "yearly");
+  const hasActiveSubscription =
+    userPlanStatus === "active" &&
+    (userPlan === "monthly" || userPlan === "yearly");
 
   // Used for the animation of Manage Billing button (eg: always visible for now)
   const isOpen = true;
@@ -120,7 +123,8 @@ export default function Pricing() {
           when you install promptR Chrome Extension!
         </p>
         <p className="mx-auto mt-2 mb-0 max-w-2xl text-balance text-base text-muted-foreground">
-          To upgrade or cancel your plan, click on the Manage Billing button below.
+          To upgrade or cancel your plan, click on the Manage Billing button
+          below.
         </p>
         {/* Pricing Table */}
         <div className="mt-8 w-full max-w-4xl mx-auto overflow-x-auto">
@@ -194,7 +198,9 @@ export default function Pricing() {
                 {plans.map((plan) => {
                   // If the user has any active subscription, disable all buttons
                   const disabled = hasActiveSubscription;
-                  const buttonText = hasActiveSubscription ? "Already Subscribed" : plan.cta;
+                  const buttonText = hasActiveSubscription
+                    ? "Already Subscribed"
+                    : plan.cta;
                   return (
                     <td key={plan.id} className="py-4 px-6 text-center">
                       <form action="/api/create-checkout-session" method="POST">
@@ -228,7 +234,9 @@ export default function Pricing() {
               className="w-full justify-start h-10 mb-1 text-left"
               onClick={async () => {
                 try {
-                  const res = await fetch("/api/create-portal-session", { method: "POST" });
+                  const res = await fetch("/api/create-portal-session", {
+                    method: "POST",
+                  });
                   const data = await res.json();
                   if (data.url) {
                     window.location.href = data.url;
