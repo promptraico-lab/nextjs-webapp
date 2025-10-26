@@ -12,14 +12,19 @@ import { useForm } from "react-hook-form";
 import apiClient from "@/lib/apiClient";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { GoogleLogin } from "@react-oauth/google";
 
 export function RegisterForm({ className, ...props }) {
   const router = useRouter();
   const { register, handleSubmit, reset } = useForm();
+  const [loading, setLoading] = useState(false);
+
   const onSubmit = async (data) => {
     try {
+      setLoading(true);
       const response = await apiClient.post("/auth/register", data);
+      setLoading(false);
 
       if (response.ok) {
         toast.success("User registered successfully!");
@@ -72,7 +77,7 @@ export function RegisterForm({ className, ...props }) {
                   {...register("password", { required: true })}
                 />
               </div>
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full" disabled={loading}>
                 Register
               </Button>
               <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">

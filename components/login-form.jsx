@@ -12,11 +12,13 @@ import { toast } from "react-hot-toast";
 import useAuth from "@/hooks/useAuth";
 import apiClient from "@/lib/apiClient";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { GoogleLogin } from "@react-oauth/google";
 import logo from "../public/logo.png";
 
 export function LoginForm({ className, ...props }) {
   const { register, handleSubmit } = useForm();
+  const [loading, setLoading] = useState(false);
   const { logIn } = useAuth();
   const router = useRouter();
 
@@ -38,7 +40,9 @@ export function LoginForm({ className, ...props }) {
 
   const onSubmit = async (data) => {
     try {
+      setLoading(true);
       const response = await apiClient.post("/auth/login", data);
+      setLoading(false);
 
       const token = response.headers && response.headers["x-auth-token"];
 
@@ -140,7 +144,7 @@ export function LoginForm({ className, ...props }) {
                   {...register("password", { required: true })}
                 />
               </div>
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full" disabled={loading}>
                 Login
               </Button>
               <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
