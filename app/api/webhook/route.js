@@ -18,7 +18,6 @@ export async function POST(req) {
     // Get the raw body as a buffer
     body = await req.arrayBuffer();
     const buf = Buffer.from(body);
-
     const signature = req.headers.get("stripe-signature");
 
     if (endpointSecret) {
@@ -87,7 +86,7 @@ export async function POST(req) {
         }
 
         // Upsert/activate subscription for user in our DB
-        const sub = await prisma.subscription.upsert({
+        await prisma.subscription.upsert({
           where: { userId: user.id },
           create: {
             userId: user.id,
