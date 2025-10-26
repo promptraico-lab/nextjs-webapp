@@ -50,7 +50,7 @@ export async function POST(req) {
     // Create the billing portal session
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: `${process.env.NEXT_PUBLIC_WEBSITE_URL}/admin/pricing`,
+      return_url: `${process.env.NEXT_PUBLIC_WEBSITE_URL}/admin/updateUser`,
     });
 
     // Respond with the billing portal URL
