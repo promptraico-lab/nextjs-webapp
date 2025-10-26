@@ -10,7 +10,7 @@ export async function POST(req) {
     const contentType = req.headers.get("content-type") || "";
     let customerId = null;
 
-    if (contentType.startsWith("multipart/form-data")) {
+    if (contentType.startsWith("application/x-www-form-urlencoded")) {
       // Parse the form data from the request
       const formData = await req.formData();
       const session_id = formData.get("session_id");
@@ -23,7 +23,9 @@ export async function POST(req) {
       }
 
       // Retrieve the checkout session to get the customer ID
-      const checkoutSession = await stripe.checkout.sessions.retrieve(session_id);
+      const checkoutSession = await stripe.checkout.sessions.retrieve(
+        session_id
+      );
 
       if (!checkoutSession || !checkoutSession.customer) {
         return NextResponse.json(
@@ -52,6 +54,9 @@ export async function POST(req) {
     });
 
     // Respond with the billing portal URL
+    if (contentType.startsWith("application/x-www-form-urlencoded")) {
+      return NextResponse.redirect(session.url, 303);
+    }
     return NextResponse.json({ url: session.url });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 400 });
