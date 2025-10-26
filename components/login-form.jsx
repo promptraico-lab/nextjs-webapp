@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +13,7 @@ import useAuth from "@/hooks/useAuth";
 import apiClient from "@/lib/apiClient";
 import { useRouter } from "next/navigation";
 import { GoogleLogin } from "@react-oauth/google";
+import logo from "../public/logo.png";
 
 export function LoginForm({ className, ...props }) {
   const { register, handleSubmit } = useForm();
@@ -148,7 +150,7 @@ export function LoginForm({ className, ...props }) {
               </div>
               <div className="grid grid-cols-1 gap-4">
                 <GoogleLogin
-                  style={{ width: "100%" }}
+                  width="100%"
                   onSuccess={(credentialResponse) =>
                     onGoogleSubmit(credentialResponse)
                   }
@@ -165,11 +167,15 @@ export function LoginForm({ className, ...props }) {
               </div>
             </div>
           </form>
-          <div className="bg-muted relative hidden md:block">
-            <img
-              src="/placeholder.svg"
-              alt="Image"
+          <div className="bg-white relative hidden md:block">
+            <Image
+              src={logo}
+              alt="Logo"
+              fill
+              objectFit="contain"
               className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+              sizes="100vw"
+              priority
             />
           </div>
         </CardContent>
