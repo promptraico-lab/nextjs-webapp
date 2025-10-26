@@ -1,9 +1,8 @@
 import joi from "joi";
 import bcrypt from "bcrypt";
-import { createClient } from "@/utils/supabase/server";
-import { cookies } from "next/headers";
 import { stripe } from "@/lib/stripe"; // ensure this import is available
 import { createId } from "@paralleldrive/cuid2";
+import prisma from "@/lib/prisma";
 
 const registerSchema = joi.object({
   email: joi.string().email().required(),
@@ -13,25 +12,26 @@ const registerSchema = joi.object({
 const jsonHeader = { "Content-Type": "application/json" };
 
 export async function POST(req) {
-  const supabase = createClient(await cookies());
-
   const body = await req.json();
 
   // Validate the request body
   const { error, value } = registerSchema.validate(body);
   if (error) {
-    return new Response(JSON.stringify({ error: error.details[0].message }), {
-      status: 400,
-      headers: jsonHeader,
-    });
+    return new Response(
+      JSON.stringify({
+        error: "Validation error: " + error.details[0].message,
+      }),
+      {
+        status: 400,
+        headers: jsonHeader,
+      }
+    );
   }
 
   // Check if user already exists using Supabase
-  const { data: existingUser } = await supabase
-    .from("User")
-    .select("*")
-    .eq("email", value.email)
-    .single();
+  const existingUser = await prisma.user.findUnique({
+    where: { email: value.email },
+  });
 
   if (existingUser)
     return new Response(JSON.stringify({ error: "User already exists" }), {
@@ -48,24 +48,59 @@ export async function POST(req) {
   });
 
   // Create a new user in the database using Supabase
-  const { data: newUser, error: userError } = await supabase
-    .from("User")
-    .insert([
-      {
+  let newUser, userError;
+  try {
+    newUser = await prisma.user.create({
+      data: {
         id: createId(),
         email: value.email,
         password: hashedPassword,
         stripeCustomerId: customer.id,
       },
-    ])
-    .select("*")
-    .single();
+    });
+    userError = null;
+  } catch (e) {
+    newUser = null;
+    userError = e;
+  }
 
   if (userError) {
-    return new Response(JSON.stringify({ error: userError.message }), {
-      status: 500,
-      headers: jsonHeader,
+    return new Response(
+      JSON.stringify({ error: "Could not create user: " + userError.message }),
+      {
+        status: 500,
+        headers: jsonHeader,
+      }
+    );
+  }
+
+  // After user is created, create a subscription record for the user in the database
+  let subscriptionError = null;
+  try {
+    await prisma.subscription.create({
+      data: {
+        id: createId(),
+        userId: newUser.id,
+        plan: "MONTHLY",
+        status: "TRIAL",
+        createdAt: new Date(),
+        currentPeriodEnd: new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000),
+      },
     });
+  } catch (e) {
+    subscriptionError = e;
+  }
+
+  if (subscriptionError) {
+    return new Response(
+      JSON.stringify({
+        error: "Could not create subscription: " + subscriptionError.message,
+      }),
+      {
+        status: 500,
+        headers: jsonHeader,
+      }
+    );
   }
 
   return new Response(

@@ -1,15 +1,12 @@
 import prisma from "@/lib/prisma";
-import { createClient } from "@/utils/supabase/server";
 import jwt from "jsonwebtoken";
 import { stripe } from "@/lib/stripe";
-import { cookies } from "next/headers";
 import { createId } from "@paralleldrive/cuid2";
 
 // This is the Google redirect URL after login with @react-oauth/google
 export async function POST(req) {
   const headers = new Headers();
   headers.set("Content-Type", "application/json");
-  const supabase = createClient(await cookies());
 
   try {
     let { user: googleUser } = await req.json();
@@ -43,27 +40,59 @@ export async function POST(req) {
         email: googleUser.email,
       });
 
-      // Create a new user in the database using Supabase
-      const { data, error: userError } = await supabase
-        .from("User")
-        .insert([
-          {
-            id: createId(),
-            email: googleUser.email,
-            password: "",
-            stripeCustomerId: customer.id,
+      // Create a new user in the database using Prisma
+      user = await prisma.user.create({
+        data: {
+          id: createId(),
+          email: googleUser.email,
+          password: "",
+          name: googleUser.name,
+          stripeCustomerId: customer.id,
+        },
+        include: {
+          subscription: {
+            select: {
+              id: true,
+              stripeSubId: true,
+              plan: true,
+              status: true,
+              currentPeriodEnd: true,
+            },
           },
-        ])
-        .select("*")
-        .single();
+        },
+      });
 
-      if (userError) {
-        return new Response(JSON.stringify({ error: userError.message }), {
-          status: 500,
-          headers: jsonHeader,
+      // After user is created, create a subscription record for the user in the database
+      let subscriptionError = null;
+      try {
+        await prisma.subscription.create({
+          data: {
+            id: createId(),
+            userId: user.id,
+            plan: "MONTHLY",
+            status: "TRIAL",
+            createdAt: new Date(),
+            currentPeriodEnd: new Date(
+              Date.now() + 10 * 365 * 24 * 60 * 60 * 1000
+            ),
+          },
         });
+      } catch (e) {
+        subscriptionError = e;
       }
-      user = data;
+
+      if (subscriptionError) {
+        return new Response(
+          JSON.stringify({
+            error:
+              "Could not create subscription: " + subscriptionError.message,
+          }),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
     }
 
     // Issue JWT like in /auth/login/route.js
