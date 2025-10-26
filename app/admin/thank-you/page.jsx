@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import useAuth from "@/hooks/useAuth";
+import apiClient from "@/lib/apiClient";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, BadgeCheck } from "lucide-react";
@@ -102,17 +104,39 @@ const CancelDisplay = () => (
 export default function ThankYou() {
   const [status, setStatus] = useState("loading");
   const [sessionId, setSessionId] = useState("");
+  const { currentUser, updateUser } = useAuth();
 
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
 
     if (query.get("success")) {
+      const sessId = query.get("session_id") || "";
+      setSessionId(sessId);
       setStatus("success");
-      setSessionId(query.get("session_id") || "");
+
+      // Fetch session details using apiClient and update user after successful checkout
+      if (sessId) {
+        apiClient
+          .get(`/session_id`, { session_id: sessId })
+          .then(async (response) => {
+            if (response.ok && response.data && response.data.session) {
+              // Sub info is available in response.data.subscription (and possibly customer)
+              // Now update local user by refetching their profile
+              console.log(response.data.subscription);
+              await updateUser({
+                ...currentUser,
+                subscription: response.data.subscription,
+              });
+            }
+          })
+          .catch((err) => {
+            // Optionally handle/log
+            console.error("Could not fetch session details", err);
+          });
+      }
     } else if (query.get("canceled")) {
       setStatus("canceled");
     } else {
-      // Redirect to /admin/dashboard if neither success nor canceled
       window.location.replace("/admin/dashboard");
     }
   }, []);
@@ -122,7 +146,6 @@ export default function ThankYou() {
   } else if (status === "canceled") {
     return <CancelDisplay />;
   } else {
-    // This will only briefly show while redirecting
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 py-24">
         <Logo />
