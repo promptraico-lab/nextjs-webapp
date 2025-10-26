@@ -174,6 +174,7 @@ export async function POST(req) {
       },
     });
   } catch (error) {
+    console.error("Error in optimize-prompt route:", error);
     return new Response(JSON.stringify({ error: "Internal server error." }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
