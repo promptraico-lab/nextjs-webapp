@@ -87,7 +87,7 @@ export async function POST(req) {
         }
 
         // Upsert/activate subscription for user in our DB
-        await prisma.subscription.upsert({
+        const sub = await prisma.subscription.upsert({
           where: { userId: user.id },
           create: {
             userId: user.id,
@@ -123,6 +123,7 @@ export async function POST(req) {
       const items = subscription.items?.data?.[0];
       const price = items?.price;
       const lookupKey = price?.lookup_key;
+      console.log(subscription.items);
 
       let planType = "MONTHLY";
       if (
@@ -176,6 +177,33 @@ export async function POST(req) {
           status: appStatus,
           currentPeriodEnd,
           user: { connect: { id: user.id } },
+        },
+      });
+
+      return new NextResponse(null, { status: 200 });
+    }
+
+    if (event.type === "customer.subscription.deleted") {
+      const subscription = event.data.object;
+      const stripeCustomerId = subscription.customer;
+
+      // Find user by stripeCustomerId
+      const user = await prisma.user.findUnique({
+        where: { stripeCustomerId },
+      });
+
+      if (!user) {
+        console.error(
+          "User not found for Stripe customer ID:",
+          stripeCustomerId
+        );
+        return new NextResponse("User not found.", { status: 404 });
+      }
+
+      await prisma.subscription.update({
+        where: { userId: user.id },
+        data: {
+          status: "CANCELED",
         },
       });
 
