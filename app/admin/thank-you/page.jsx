@@ -116,23 +116,19 @@ export default function ThankYou() {
 
       // Fetch session details using apiClient and update user after successful checkout
       if (sessId) {
-        apiClient
-          .get(`/session_id`, { session_id: sessId })
-          .then(async (response) => {
+        (async () => {
+          try {
+            const response = await apiClient.get(`/session_id`);
             if (response.ok && response.data && response.data.session) {
-              // Sub info is available in response.data.subscription (and possibly customer)
-              // Now update local user by refetching their profile
-              console.log(response.data.subscription);
               await updateUser({
                 ...currentUser,
                 subscription: response.data.subscription,
               });
             }
-          })
-          .catch((err) => {
-            // Optionally handle/log
+          } catch (err) {
             console.error("Could not fetch session details", err);
-          });
+          }
+        })();
       }
     } else if (query.get("canceled")) {
       setStatus("canceled");
