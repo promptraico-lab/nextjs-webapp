@@ -77,7 +77,11 @@ export function RegisterForm({ className, ...props }) {
                   {...register("password", { required: true })}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button
+                type="submit"
+                className="w-full hover:cursor-pointer"
+                disabled={loading}
+              >
                 Register
               </Button>
               <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
