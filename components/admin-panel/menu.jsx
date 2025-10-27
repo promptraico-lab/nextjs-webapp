@@ -2,8 +2,8 @@
 import Link from "next/link";
 import { Ellipsis, LogOut } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import useAuth from "@/hooks/useAuth";
-
 import { cn } from "@/lib/utils";
 import { getMenuList } from "@/lib/menu-list";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/tooltip";
 
 export function Menu({ isOpen }) {
+  const [isLoading, setIsLoading] = useState(false);
   const pathname = usePathname();
   const menuList = getMenuList(pathname);
   const { logOut } = useAuth();
@@ -118,7 +119,9 @@ export function Menu({ isOpen }) {
                     <Button
                       variant="ghost"
                       className="w-full justify-start h-10 mb-1 text-left"
+                      disabled={isLoading}
                       onClick={async () => {
+                        setIsLoading(true);
                         try {
                           const res = await fetch(
                             "/api/create-portal-session",
@@ -134,27 +137,56 @@ export function Menu({ isOpen }) {
                           }
                         } catch (err) {
                           alert("Billing portal unavailable.");
+                        } finally {
+                          setIsLoading(false);
                         }
                       }}
                     >
                       <span className={cn(isOpen === false ? "" : "mr-4")}>
-                        <svg
-                          width="18"
-                          height="18"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <rect
-                            x="3"
-                            y="5"
+                        {isLoading ? (
+                          <svg
+                            className="animate-spin"
                             width="18"
-                            height="14"
-                            rx="2"
-                            strokeWidth="2"
-                          />
-                          <path strokeWidth="2" d="M3 10h18" />
-                        </svg>
+                            height="18"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <circle
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              strokeWidth="4"
+                              stroke="currentColor"
+                              opacity="0.2"
+                            />
+                            <path
+                              d="M22 12a10 10 0 01-10 10"
+                              strokeWidth="4"
+                              stroke="currentColor"
+                              strokeLinecap="round"
+                              className="opacity-70"
+                            />
+                          </svg>
+                        ) : (
+                          <svg
+                            width="18"
+                            height="18"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <rect
+                              x="3"
+                              y="5"
+                              width="18"
+                              height="14"
+                              rx="2"
+                              strokeWidth="2"
+                            />
+                            <path strokeWidth="2" d="M3 10h18" />
+                          </svg>
+                        )}
                       </span>
                       <p
                         className={cn(
@@ -164,7 +196,7 @@ export function Menu({ isOpen }) {
                             : "translate-x-0 opacity-100"
                         )}
                       >
-                        Manage Billing
+                        {isLoading ? "Loading..." : "Manage Billing"}
                       </p>
                     </Button>
                   </TooltipTrigger>
