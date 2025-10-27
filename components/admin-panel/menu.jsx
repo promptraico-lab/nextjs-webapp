@@ -118,7 +118,7 @@ export function Menu({ isOpen }) {
                   <TooltipTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="w-full justify-start h-10 mb-1 text-left"
+                      className="w-full justify-start h-10 mb-1 text-left hover:cursor-pointer"
                       disabled={isLoading}
                       onClick={async () => {
                         setIsLoading(true);
@@ -214,7 +214,7 @@ export function Menu({ isOpen }) {
                   <Button
                     onClick={logOut}
                     variant="outline"
-                    className="w-full justify-center h-10 mt-5"
+                    className="w-full justify-center h-10 mt-5 hover:cursor-pointer"
                   >
                     <span className={cn(isOpen === false ? "" : "mr-4")}>
                       <LogOut size={18} />
