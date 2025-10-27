@@ -122,7 +122,6 @@ export async function POST(req) {
       const items = subscription.items?.data?.[0];
       const price = items?.price;
       const lookupKey = price?.lookup_key;
-      console.log(subscription.items);
 
       let planType = "MONTHLY";
       if (

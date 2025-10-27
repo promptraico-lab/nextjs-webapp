@@ -28,8 +28,6 @@ export async function GET(request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    console.log(user.subscription);
-
     return NextResponse.json({
       subscription: user.subscription,
     });
