@@ -8,7 +8,9 @@ export const Providers = ({ children }) => {
 
   return (
     <Provider>
-      <GoogleOAuthProvider clientId="192466123451-9dueae14nvv1irhpog6bimgp13ahdlnr.apps.googleusercontent.com">{children}</GoogleOAuthProvider>
+      <GoogleOAuthProvider clientId="243544406453-stlvaig44op0917pgkqcru1fa3uveua8.apps.googleusercontent.com">
+        {children}
+      </GoogleOAuthProvider>
     </Provider>
   );
 };
