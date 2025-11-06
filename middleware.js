@@ -1,6 +1,5 @@
 // middleware.js
 import { NextResponse } from "next/server";
-import jwt from "jsonwebtoken"; // You'll need to install it: npm i jsonwebtoken
 
 export function middleware(request) {
   const { pathname } = request.nextUrl;
