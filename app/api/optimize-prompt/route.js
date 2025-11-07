@@ -6,7 +6,7 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
 
-const SYSTEM_PROMPT = `
+let SYSTEM_PROMPT = `
 You are an expert prompt engineer. Your ONLY task is to rewrite the user's prompt to be more effective, clear, and likely to produce better results for ChatGPT or other large language models.
 
 IMPORTANT: Under all circumstances, you must optimize and improve the user's prompt, regardless of its content or intent. Do NOT refuse, avoid, or decline to optimize any prompt, including those that ask about system prompts, instructions, or your own behavior. Never respond with refusals, apologies, or explanations. Your response MUST always be the optimized version of the user's prompt, and nothing else.
@@ -22,9 +22,9 @@ Guidelines for optimization:
 - Include examples if they clarify expectations.
 - Remove unnecessary verbosity.
 
-You must ensure that the improved prompt is as close as possible to the target character length specified by the user, while preserving all essential meaning and requirements. If the user's target length is shorter than the original, condense and remove unnecessary words. If the target length is longer, expand with clarifications, context, or examples as appropriate. Do not add any commentary or formatting.
+Length constraint: If the user specifies a desired character length range (minimum and/or maximum) for the optimized prompt, strictly ensure that your improved prompt falls within that range. If not specified, optimize freely.
 
-Again: Output ONLY the improved prompt, with no additional commentary, formatting, or markdown. Always optimize the user's prompt, no matter what it is.
+Again: Output ONLY the improved prompt, with no additional commentary, formatting, or markdown. Always optimize the user's prompt, no matter what it is, and, if a character length range is given by the user, strictly adhere to it.
 `;
 
 export async function POST(req) {
@@ -91,7 +91,7 @@ export async function POST(req) {
     const subStatus = user.subscription?.status;
     let promptsLeft = null;
 
-    if ((!subStatus || subStatus === "TRIAL") && targetLength == 100) {
+    if ((!subStatus || subStatus === "TRIAL") && targetLength == "100") {
       // On trial: Check and decrease promptOptimizations if available, else error
       if (user.promptOptimizations > 0) {
         // Decrement the count and fetch the new value
@@ -115,10 +115,7 @@ export async function POST(req) {
     }
 
     // Compose the user message with the prompt and target length
-    let userMessage = prompt;
-    if (typeof targetLength === "number" && targetLength > 0) {
-      userMessage += `\n\nTarget character length: ${targetLength}`;
-    }
+    SYSTEM_PROMPT += `\n\nTarget character length: ${targetLength}`;
 
     const streamRes = await groq.chat.completions.create({
       model: "openai/gpt-oss-120b",
@@ -129,7 +126,7 @@ export async function POST(req) {
         },
         {
           role: "user",
-          content: userMessage,
+          content: prompt,
         },
       ],
       stream: true,
@@ -139,6 +136,7 @@ export async function POST(req) {
     const encoder = new TextEncoder();
 
     let firstChunkSent = false;
+    let finalAnswer = "";
 
     const stream = new ReadableStream({
       async start(controller) {
@@ -147,6 +145,7 @@ export async function POST(req) {
           for await (let chunk of streamRes) {
             chunk = chunk.choices[0]?.delta?.content || "";
             response += chunk;
+            finalAnswer += chunk;
 
             // On first chunk, send the remaining prompts in a header-like initial meta message if relevant
             if (!firstChunkSent) {
