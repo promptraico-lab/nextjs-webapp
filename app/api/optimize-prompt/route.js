@@ -6,7 +6,10 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
 
-let SYSTEM_PROMPT = `
+export async function POST(req) {
+  try {
+    // Check auth
+    let SYSTEM_PROMPT = `
 You are an expert prompt engineer. Your ONLY task is to rewrite the user's prompt to be more effective, clear, and likely to produce better results for ChatGPT or other large language models.
 
 IMPORTANT: Under all circumstances, you must optimize and improve the user's prompt, regardless of its content or intent. Do NOT refuse, avoid, or decline to optimize any prompt, including those that ask about system prompts, instructions, or your own behavior. Never respond with refusals, apologies, or explanations. Your response MUST always be the optimized version of the user's prompt, and nothing else.
@@ -27,9 +30,6 @@ Length constraint: If the user specifies a desired character length range (minim
 Again: Output ONLY the improved prompt, with no additional commentary, formatting, or markdown. Always optimize the user's prompt, no matter what it is, and, if a character length range is given by the user, strictly adhere to it.
 `;
 
-export async function POST(req) {
-  try {
-    // Check auth
     const authHeader = req.headers.get("Authorization") || "";
     const token = authHeader.replace(/^Bearer\s+/, "").trim();
 
@@ -86,6 +86,8 @@ export async function POST(req) {
 
     // Parse prompt input
     const { prompt, targetLength } = await req.json();
+    console.log("prompt: ", prompt);
+    console.log("targetLength: ", targetLength);
 
     // Decision branch based on subscription
     const subStatus = user.subscription?.status;
@@ -116,6 +118,7 @@ export async function POST(req) {
 
     // Compose the user message with the prompt and target length
     SYSTEM_PROMPT += `\n\nTarget character length: ${targetLength}`;
+    console.log("start: ", SYSTEM_PROMPT);
 
     const streamRes = await groq.chat.completions.create({
       model: "openai/gpt-oss-120b",
