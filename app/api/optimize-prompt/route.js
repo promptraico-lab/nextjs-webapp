@@ -86,8 +86,6 @@ Again: Output ONLY the improved prompt, with no additional commentary, formattin
 
     // Parse prompt input
     const { prompt, targetLength } = await req.json();
-    console.log("prompt: ", prompt);
-    console.log("targetLength: ", targetLength);
 
     // Decision branch based on subscription
     const subStatus = user.subscription?.status;
@@ -117,8 +115,7 @@ Again: Output ONLY the improved prompt, with no additional commentary, formattin
     }
 
     // Compose the user message with the prompt and target length
-    SYSTEM_PROMPT += `\n\nTarget character length: ${targetLength}`;
-    console.log("start: ", SYSTEM_PROMPT);
+    SYSTEM_PROMPT += `\n\nTarget character length: 200`;
 
     const streamRes = await groq.chat.completions.create({
       model: "openai/gpt-oss-120b",
@@ -165,6 +162,21 @@ Again: Output ONLY the improved prompt, with no additional commentary, formattin
 
             controller.enqueue(encoder.encode(chunk));
           }
+
+          // Add a sentence for lengthening at the end of the response
+          let lengthenSentence;
+          console.log(targetLength);
+          switch (targetLength) {
+            case 100:
+              lengthenSentence = "";
+              break;
+            case "+190":
+              lengthenSentence = `\nKeep your response length at ${targetLength}`;
+              break;
+            default:
+              lengthenSentence = `\nKeep your response between ${targetLength}`;
+          }
+          controller.enqueue(encoder.encode(lengthenSentence));
 
           controller.close();
         } catch (error) {
