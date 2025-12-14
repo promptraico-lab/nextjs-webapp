@@ -62,6 +62,40 @@ export function RegisterForm({ className, ...props }) {
     }
   };
 
+  const onGoogleSubmit = async (credentialResponse) => {
+    try {
+      const credential = credentialResponse.credential;
+      if (!credential) throw new Error("Missing Google credential");
+      const user = decodeJwt(credential);
+
+      // Send user data to your backend for registration/login
+      const response = await apiClient.post("/auth/google", { user });
+
+      const token = response.headers && response.headers["x-auth-token"];
+
+      if (response.ok && token) {
+        logIn(response.data, token);
+        toast.success("Login successful");
+        if (typeof window !== "undefined") {
+          setTimeout(() => {
+            router.push("/admin/dashboard");
+          }, 100);
+        }
+        return response.data;
+      }
+
+      if (response.status === 401) {
+        throw new Error("Invalid email or password");
+      }
+
+      throw new Error(
+        response.data?.message || response.problem || "Google login failed"
+      );
+    } catch (error) {
+      toast.error(error.message || "Google login failed. Please try again.");
+    }
+  };
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="overflow-hidden p-0">
