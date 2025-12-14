@@ -14,11 +14,29 @@ import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { GoogleLogin } from "@react-oauth/google";
+import useAuth from "@/hooks/useAuth";
 
 export function RegisterForm({ className, ...props }) {
   const router = useRouter();
   const { register, handleSubmit, reset } = useForm();
   const [loading, setLoading] = useState(false);
+  const { logIn } = useAuth();
+
+  // Decode JWT from credential
+  const decodeJwt = (token) => {
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      window
+        .atob(base64)
+        .split("")
+        .map(function (c) {
+          return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join("")
+    );
+    return JSON.parse(jsonPayload);
+  };
 
   const onSubmit = async (data) => {
     try {
@@ -27,9 +45,12 @@ export function RegisterForm({ className, ...props }) {
       setLoading(false);
 
       if (response.ok) {
-        toast.success("User registered successfully!");
+        toast.success(
+          response.data?.message ||
+            "Registration successful! Please check your email to verify your account."
+        );
         reset();
-        router.push("/login");
+        router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
       } else {
         toast.error(
           response.data?.error ||
