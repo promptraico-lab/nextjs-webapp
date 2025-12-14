@@ -157,8 +157,8 @@ export async function POST(req) {
         status === "unpaid" ||
         status === "incomplete"
       ) {
-        // Show payment warning (keep subscription active, set a "payment warning" flag maybe)
-        appStatus = "WARNING";
+        // Payment issue - set to PAUSED
+        appStatus = "PAUSED";
       } else if (status === "canceled" || status === "incomplete_expired") {
         // Disable paid features
         appStatus = "CANCELED";
@@ -179,6 +179,99 @@ export async function POST(req) {
       });
 
       return new NextResponse(null, { status: 200 });
+    }
+
+    // --- Handle invoice.payment_failed event ---
+    if (event.type === "invoice.payment_failed") {
+      const invoice = event.data.object;
+      const stripeCustomerId = invoice.customer;
+      const stripeSubId = invoice.subscription;
+
+      try {
+        // Find user by stripeCustomerId
+        const user = await prisma.user.findUnique({
+          where: { stripeCustomerId },
+        });
+
+        if (!user) {
+          console.error(
+            "User not found for Stripe customer ID:",
+            stripeCustomerId
+          );
+          return new NextResponse("User not found.", { status: 404 });
+        }
+
+        // Update subscription status to PAUSED if subscription exists
+        if (stripeSubId) {
+          await prisma.subscription.update({
+            where: { userId: user.id },
+            data: {
+              status: "PAUSED",
+            },
+          });
+
+          console.log(
+            `Payment failed for user ${user.id} (${user.email}). Subscription status set to PAUSED.`
+          );
+        }
+
+        return new NextResponse(null, { status: 200 });
+      } catch (err) {
+        console.error("Error handling invoice.payment_failed:", err);
+        return new NextResponse("Payment failure handling error", {
+          status: 500,
+        });
+      }
+    }
+
+    // --- Handle invoice.payment_succeeded event ---
+    if (event.type === "invoice.payment_succeeded") {
+      const invoice = event.data.object;
+      const stripeCustomerId = invoice.customer;
+      const stripeSubId = invoice.subscription;
+
+      try {
+        // Find user by stripeCustomerId
+        const user = await prisma.user.findUnique({
+          where: { stripeCustomerId },
+        });
+
+        if (!user) {
+          console.error(
+            "User not found for Stripe customer ID:",
+            stripeCustomerId
+          );
+          return new NextResponse("User not found.", { status: 404 });
+        }
+
+        // Update subscription status to ACTIVE and update period end if subscription exists
+        if (stripeSubId) {
+          // Retrieve subscription from Stripe to get current period end
+          const stripeSub = await stripe.subscriptions.retrieve(stripeSubId);
+          const currentPeriodEnd = stripeSub.current_period_end
+            ? new Date(stripeSub.current_period_end * 1000)
+            : null;
+
+          await prisma.subscription.update({
+            where: { userId: user.id },
+            data: {
+              status: "ACTIVE",
+              currentPeriodEnd,
+            },
+          });
+
+          console.log(
+            `Payment succeeded for user ${user.id} (${user.email}). Subscription status restored to ACTIVE.`
+          );
+        }
+
+        return new NextResponse(null, { status: 200 });
+      } catch (err) {
+        console.error("Error handling invoice.payment_succeeded:", err);
+        return new NextResponse("Payment success handling error", {
+          status: 500,
+        });
+      }
     }
 
     if (event.type === "customer.subscription.deleted") {
