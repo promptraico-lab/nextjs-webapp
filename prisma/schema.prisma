@@ -20,17 +20,19 @@ datasource db {
 // }
 
 model User {
-  id                  String        @id @default(cuid())
-  email               String        @unique
+  id                  String             @id @default(cuid())
+  email               String             @unique
   name                String?
   password            String
   bio                 String?
   location            String?
   phone               String?
-  stripeCustomerId    String?       @unique
-  promptOptimizations Int           @default(5) // Each user starts with 10
+  stripeCustomerId   String?            @unique
+  emailVerified       Boolean           @default(false)
+  promptOptimizations Int                @default(5) // Each user starts with 10
   subscription        Subscription?
-  createdAt           DateTime      @default(now())
+  emailVerifications EmailVerification[]
+  createdAt           DateTime           @default(now())
 }
 
 model Subscription {
@@ -55,4 +57,14 @@ enum SubStatus {
   ACTIVE
   CANCELED
   EXPIRED
+}
+
+model EmailVerification {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token      String   @unique
+  expiresAt  DateTime
+  verifiedAt DateTime?
+  createdAt  DateTime @default(now())
 }
