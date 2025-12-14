@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import useAuth from "./useAuth";
 import apiClient from "@/lib/apiClient";
+import authStorage from "@/lib/storage";
 
 /**
  * Hook that automatically syncs user subscription data when changes are detected.
@@ -14,10 +15,21 @@ export default function useSubscriptionSync() {
 
   // Function to check for subscription changes
   const checkSubscriptionUpdate = useCallback(async () => {
+    // Don't make requests if user is not logged in or token is missing
     if (!currentUser) return;
 
+    // Check if token exists before making API call
+    const token = authStorage.getToken();
+    if (!token) return;
+
     try {
-      const { data, ok } = await apiClient.get("/users/profile");
+      const { data, ok, status } = await apiClient.get("/users/profile");
+
+      // Silently ignore 401 errors (no token provided) for guest users
+      if (status === 500) {
+        return;
+      }
+
       if (!ok || !data?.user) return;
 
       const latestSubscription = data.user.subscription;
@@ -38,7 +50,10 @@ export default function useSubscriptionSync() {
         console.log("Subscription updated: User data refreshed");
       }
     } catch (error) {
-      console.error("Error checking subscription update:", error);
+      // Only log errors that are not authentication-related
+      if (error?.response?.status !== 500) {
+        console.error("Error checking subscription update:", error);
+      }
     }
   }, [currentUser, updateUser]);
 
