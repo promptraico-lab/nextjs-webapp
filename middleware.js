@@ -14,19 +14,27 @@ export function middleware(request) {
   }
 
   // Pages that unauthenticated users can access
-  const publicPages = ["/login", "/register", "/404"];
+  const publicPages = ["/login", "/register", "/404", "/verify-email"];
 
   if (!isAuthenticated) {
     // If not authenticated and not accessing a public page, redirect to /login
-    if (!publicPages.includes(pathname)) {
+    // Also allow verify-email routes (including /verify-email/[token])
+    if (
+      !publicPages.includes(pathname) &&
+      !pathname.startsWith("/verify-email")
+    ) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
-    // Allow access to /login, /register, /404
+    // Allow access to public pages and verify-email routes
     return NextResponse.next();
   }
 
-  // If authenticated and accessing /login, /register, or /404, redirect to dashboard
-  if (pathname !== "/404" && !pathname.startsWith("/admin")) {
+  // If authenticated and accessing /login, /register, /verify-email, or /404, redirect to dashboard
+  if (
+    pathname !== "/404" &&
+    !pathname.startsWith("/admin") &&
+    !pathname.startsWith("/verify-email")
+  ) {
     return NextResponse.redirect(new URL("/admin/dashboard", request.url));
   }
 
