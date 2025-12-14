@@ -165,7 +165,6 @@ Again: Output ONLY the improved prompt, with no additional commentary, formattin
 
           // Add a sentence for lengthening at the end of the response
           let lengthenSentence;
-          console.log(targetLength);
           switch (targetLength) {
             case 100:
               lengthenSentence = "";

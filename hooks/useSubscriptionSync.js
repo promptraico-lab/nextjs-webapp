@@ -20,7 +20,6 @@ export default function useSubscriptionSync() {
       const { data, ok } = await apiClient.get("/users/profile");
       if (!ok || !data?.user) return;
 
-      console.log(data.user);
       const latestSubscription = data.user.subscription;
       const currentSubscription = currentUser.subscription;
 
