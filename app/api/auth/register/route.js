@@ -1,8 +1,8 @@
 import joi from "joi";
 import bcrypt from "bcrypt";
-import { stripe } from "@/lib/stripe"; // ensure this import is available
 import { createId } from "@paralleldrive/cuid2";
 import prisma from "@/lib/prisma";
+import { generateVerificationToken, sendVerificationEmail } from "@/lib/email";
 
 const registerSchema = joi.object({
   email: joi.string().email().required(),
@@ -42,12 +42,7 @@ export async function POST(req) {
   // Hash the password
   const hashedPassword = await bcrypt.hash(value.password, 10);
 
-  // Create a Stripe customer
-  const customer = await stripe.customers.create({
-    email: value.email,
-  });
-
-  // Create a new user in the database using Supabase
+  // Create a new user in the database (Stripe customer and subscription will be created after email verification)
   let newUser, userError;
   try {
     newUser = await prisma.user.create({
@@ -55,7 +50,8 @@ export async function POST(req) {
         id: createId(),
         email: value.email,
         password: hashedPassword,
-        stripeCustomerId: customer.id,
+        emailVerified: false,
+        stripeCustomerId: null, // Will be set after email verification
       },
     });
     userError = null;
@@ -74,27 +70,29 @@ export async function POST(req) {
     );
   }
 
-  // After user is created, create a subscription record for the user in the database
-  let subscriptionError = null;
+  // Generate verification token and create EmailVerification record
+  const verificationToken = generateVerificationToken();
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
+
+  let verificationError = null;
   try {
-    await prisma.subscription.create({
+    await prisma.emailVerification.create({
       data: {
         id: createId(),
         userId: newUser.id,
-        plan: "MONTHLY",
-        status: "TRIAL",
-        createdAt: new Date(),
-        currentPeriodEnd: new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000),
+        token: verificationToken,
+        expiresAt: expiresAt,
       },
     });
   } catch (e) {
-    subscriptionError = e;
+    verificationError = e;
   }
 
-  if (subscriptionError) {
+  if (verificationError) {
     return new Response(
       JSON.stringify({
-        error: "Could not create subscription: " + subscriptionError.message,
+        error:
+          "Could not create verification record: " + verificationError.message,
       }),
       {
         status: 500,
@@ -103,9 +101,22 @@ export async function POST(req) {
     );
   }
 
+  // Send verification email
+  const emailResult = await sendVerificationEmail(
+    value.email,
+    verificationToken
+  );
+
+  if (!emailResult.success) {
+    console.error("Failed to send verification email:", emailResult.error);
+    // Don't fail registration if email fails, but log it
+    // User can request resend later
+  }
+
   return new Response(
     JSON.stringify({
-      message: "User registered successfully",
+      message:
+        "Registration successful! Please check your email to verify your account.",
       user: { email: newUser.email },
     }),
     {
