@@ -19,6 +19,8 @@ import logo from "../public/logo.png";
 export function LoginForm({ className, ...props }) {
   const { register, handleSubmit } = useForm();
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [unverifiedEmail, setUnverifiedEmail] = useState(null);
   const { logIn } = useAuth();
   const router = useRouter();
 
@@ -38,9 +40,36 @@ export function LoginForm({ className, ...props }) {
     return JSON.parse(jsonPayload);
   };
 
+  const handleResendVerification = async (email) => {
+    try {
+      setResending(true);
+      const response = await apiClient.post("/auth/resend-verification", {
+        email,
+      });
+
+      if (response.ok) {
+        toast.success(
+          response.data?.message ||
+            "Verification email has been sent. Please check your inbox."
+        );
+        setUnverifiedEmail(null);
+      } else {
+        toast.error(
+          response.data?.error ||
+            "Failed to resend verification email. Please try again."
+        );
+      }
+    } catch (error) {
+      toast.error("An error occurred. Please try again.");
+    } finally {
+      setResending(false);
+    }
+  };
+
   const onSubmit = async (data) => {
     try {
       setLoading(true);
+      setUnverifiedEmail(null);
       const response = await apiClient.post("/auth/login", data);
       setLoading(false);
 
@@ -55,6 +84,19 @@ export function LoginForm({ className, ...props }) {
           }, 100);
         }
         return response.data;
+      }
+
+      // Check if email is not verified
+      if (
+        response.status === 403 &&
+        response.data?.error === "EMAIL_NOT_VERIFIED"
+      ) {
+        setUnverifiedEmail(response.data?.email || data.email);
+        toast.error(
+          response.data?.message ||
+            "Please verify your email address before logging in."
+        );
+        return;
       }
 
       if (response.status === 401) {
@@ -144,6 +186,24 @@ export function LoginForm({ className, ...props }) {
                   {...register("password", { required: true })}
                 />
               </div>
+              {unverifiedEmail && (
+                <div className="rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-4">
+                  <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                    Your email address has not been verified. Please check your
+                    inbox for the verification email.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 w-full"
+                    onClick={() => handleResendVerification(unverifiedEmail)}
+                    disabled={resending}
+                  >
+                    {resending ? "Sending..." : "Resend verification email"}
+                  </Button>
+                </div>
+              )}
               <Button
                 type="submit"
                 className="w-full hover:cursor-pointer"
