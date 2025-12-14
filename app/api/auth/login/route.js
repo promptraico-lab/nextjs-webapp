@@ -58,6 +58,21 @@ export async function POST(req) {
       );
     }
 
+    // Check if email is verified
+    if (!user.emailVerified) {
+      return new Response(
+        JSON.stringify({
+          message: "Please verify your email address before logging in.",
+          error: "EMAIL_NOT_VERIFIED",
+          email: user.email,
+        }),
+        {
+          status: 403,
+          headers,
+        }
+      );
+    }
+
     const token = jwt.sign(
       {
         id: user.id,
