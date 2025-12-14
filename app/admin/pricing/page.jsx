@@ -12,6 +12,7 @@ const plans = [
   {
     id: "monthly",
     name: "Monthly",
+    lookup_key: "MONTHLY",
     price: {
       monthly: 10,
       yearly: 10, // fallback, not used
@@ -29,6 +30,7 @@ const plans = [
   {
     id: "yearly",
     name: "Yearly",
+    lookup_key: "YEARLY",
     price: {
       monthly: 8, // for display as "$8/month, billed yearly"
       yearly: 8,
