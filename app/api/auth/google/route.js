@@ -41,6 +41,7 @@ export async function POST(req) {
       });
 
       // Create a new user in the database using Prisma
+      // Google OAuth users are automatically verified since Google verifies emails
       user = await prisma.user.create({
         data: {
           id: createId(),
@@ -48,6 +49,7 @@ export async function POST(req) {
           password: "",
           name: googleUser.name,
           stripeCustomerId: customer.id,
+          emailVerified: true, // Google OAuth users are auto-verified
         },
         include: {
           subscription: {
