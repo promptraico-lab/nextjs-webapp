@@ -18,7 +18,7 @@ const plans = [
       yearly: 10, // fallback, not used
     },
     description:
-      "Perfect for trying out promptR and optimizing your prompts directly from the ChatGPT interface. Cancel anytime.",
+      "Perfect for trying out Promptr and optimizing your prompts directly from the ChatGPT interface. Cancel anytime.",
     features: [
       "Unlimited prompt optimizations",
       "Works directly in ChatGPT",
@@ -36,7 +36,7 @@ const plans = [
       yearly: 8,
     },
     description:
-      "Unlock all promptR features and save 20% with annual billing. Optimize your prompts seamlessly in ChatGPT all year long.",
+      "Unlock all Promptr features and save 20% with annual billing. Optimize your prompts seamlessly in ChatGPT all year long.",
     features: [
       "Unlimited prompt optimizations",
       "Works directly in ChatGPT",
@@ -115,14 +115,14 @@ export default function Pricing() {
     <div className="not-prose flex flex-col gap-16 px-8 py-24 text-center">
       <div className="flex flex-col items-center justify-center gap-8">
         <h1 className="mb-0 text-balance font-medium text-5xl tracking-tighter!">
-          promptR: Optimize your ChatGPT prompts instantly
+          Promptr: Optimize your ChatGPT prompts instantly
         </h1>
         <p className="mx-auto mt-0 mb-0 max-w-2xl text-balance text-lg text-muted-foreground">
           Get{" "}
           <span className="font-semibold text-primary">
             10 free prompt optimizations
           </span>{" "}
-          when you install promptR Chrome Extension!
+          when you install Promptr Chrome Extension!
         </p>
         <p className="mx-auto mt-2 mb-0 max-w-2xl text-balance text-base text-muted-foreground">
           To upgrade or cancel your plan, click on the Manage Billing button
