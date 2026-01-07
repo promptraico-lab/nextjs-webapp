@@ -50,13 +50,13 @@ export function LoginForm({ className, ...props }) {
       if (response.ok) {
         toast.success(
           response.data?.message ||
-            "Verification email has been sent. Please check your inbox."
+          "Verification email has been sent. Please check your inbox."
         );
         setUnverifiedEmail(null);
       } else {
         toast.error(
           response.data?.error ||
-            "Failed to resend verification email. Please try again."
+          "Failed to resend verification email. Please try again."
         );
       }
     } catch (error) {
@@ -94,7 +94,7 @@ export function LoginForm({ className, ...props }) {
         setUnverifiedEmail(response.data?.email || data.email);
         toast.error(
           response.data?.message ||
-            "Please verify your email address before logging in."
+          "Please verify your email address before logging in."
         );
         return;
       }
@@ -250,7 +250,7 @@ export function LoginForm({ className, ...props }) {
       </Card>
       <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
         By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-        and <a href="#">Privacy Policy</a>.
+        and <a href="/privacy">Privacy Policy</a>.
       </div>
     </div>
   );

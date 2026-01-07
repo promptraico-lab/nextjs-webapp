@@ -47,14 +47,14 @@ export function RegisterForm({ className, ...props }) {
       if (response.ok) {
         toast.success(
           response.data?.message ||
-            "Registration successful! Please check your email to verify your account."
+          "Registration successful! Please check your email to verify your account."
         );
         reset();
         router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
       } else {
         toast.error(
           response.data?.error ||
-            "Registration failed. Please check your input and try again."
+          "Registration failed. Please check your input and try again."
         );
       }
     } catch (error) {
@@ -178,7 +178,7 @@ export function RegisterForm({ className, ...props }) {
       </Card>
       <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
         By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-        and <a href="#">Privacy Policy</a>.
+        and <a href="/privacy">Privacy Policy</a>.
       </div>
     </div>
   );

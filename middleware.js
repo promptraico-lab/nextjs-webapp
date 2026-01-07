@@ -14,7 +14,7 @@ export function middleware(request) {
   }
 
   // Pages that unauthenticated users can access
-  const publicPages = ["/login", "/register", "/404", "/verify-email"];
+  const publicPages = ["/login", "/register", "/404", "/verify-email", "/privacy"];
 
   if (!isAuthenticated) {
     // If not authenticated and not accessing a public page, redirect to /login
