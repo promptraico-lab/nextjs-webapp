@@ -8,16 +8,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { useState } from "react";
 import apiClient from "@/lib/apiClient";
 import { toast } from "react-hot-toast";
 import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const [resending, setResending] = useState(false);
   const searchParams = useSearchParams();
   const email = searchParams.get("email");
+
 
   const handleResend = async () => {
     if (!email) {
@@ -34,12 +35,12 @@ export default function VerifyEmailPage() {
       if (response.ok) {
         toast.success(
           response.data?.message ||
-            "Verification email has been sent. Please check your inbox."
+          "Verification email has been sent. Please check your inbox."
         );
       } else {
         toast.error(
           response.data?.error ||
-            "Failed to resend verification email. Please try again."
+          "Failed to resend verification email. Please try again."
         );
       }
     } catch (error) {
@@ -99,3 +100,12 @@ export default function VerifyEmailPage() {
     </div>
   );
 }
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<div className="bg-muted flex min-h-svh items-center justify-center">Loading...</div>}>
+      <VerifyEmailContent />
+    </Suspense>
+  );
+}
+
